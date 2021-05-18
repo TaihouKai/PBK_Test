@@ -18,6 +18,9 @@ import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
+    // public static String propertiesPath = new String(); // deprecated
+    private static boolean isFirstTime = true;
+
     /**
      * Run the algorithm.
      * @param   view            Required by Android Studio.
@@ -27,14 +30,21 @@ public class MainActivity extends AppCompatActivity {
     public void initiate(View view) throws IOException {
         TextView res = findViewById(R.id.result);
 
-        long startTime = System.currentTimeMillis();
-
+        // First KeyGen takes more time
+        long startTime1 = System.currentTimeMillis();
         BLS01 bls01 = new BLS01(this);
         AsymmetricCipherKeyPair keyPair = bls01.keyGen(bls01.setup()); // Setup
-        String message = "Hello, world!";
-        bls01.verify(bls01.sign(message, keyPair.getPrivate()), message, keyPair.getPublic());
+        String timeTaken1 = "Time taken - KeyGen: " + (System.currentTimeMillis() -startTime1) + "ms";
 
-        res.setText("Time taken: " + (System.currentTimeMillis() -startTime) + "ms");
+        if (isFirstTime)
+            isFirstTime = false;
+        else {
+            long startTime2 = System.currentTimeMillis();
+            String message = "Hello, world!";
+            bls01.verify(bls01.sign(message, keyPair.getPrivate()), message, keyPair.getPublic());
+            String timeTaken2 = "Time taken - Verify: " + (System.currentTimeMillis() - startTime2) + "ms";
+            res.setText(timeTaken1 + "\n" + timeTaken2);
+        }
     }
 
     /**
@@ -50,16 +60,29 @@ public class MainActivity extends AppCompatActivity {
      * Required by Android Studio.
      * @param savedInstanceState Required by Android Studio.
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Pre-do KeyGen to make it faster
         try {
-            getCacheFile("a.properties", getApplicationContext());
+            initiate(getWindow().getDecorView());
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        /* deprecated
+        long startTime = System.currentTimeMillis();
+        try {
+            propertiesPath = getCacheFile("a.properties", getApplicationContext()).toPath().toString();
+            Log.i("PBK_Test", propertiesPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.i("PBK_Test", String.valueOf(System.currentTimeMillis() - startTime));
+         */
     }
 
     /**

@@ -10,10 +10,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.engines.BLS01Signer;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01KeyPairGenerator;
@@ -35,6 +32,8 @@ public class BLS01 {
     public BLS01Parameters setup() throws IOException {
         BLS01ParametersGenerator setup = new BLS01ParametersGenerator();
         setup.init(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()));
+        // setup.init(PairingFactory.getPairingParameters(MainActivity.propertiesPath));
+        // setup.init(PairingFactory.getPairingParameters(context.getAssets().open("a.properties")));
 
         return setup.generateParameters();
     }
