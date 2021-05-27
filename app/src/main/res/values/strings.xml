@@ -1,6 +1,15 @@
 <resources>
     <string name="app_name">PBK_Test</string>
-    <string name="buttonRun_name">Run</string>
+
+    <string name="buttonKeyGen_name">Gen Key</string>
+    <string name="buttonMeetGen_name">Mt Gen</string>
+    <string name="buttonMeetVer_name">Mt Ver</string>
+
+    <string name="buttonRun_name">Run Test</string>
     <string name="buttonClear_name">Clear</string>
+    <string name="buttonDB_name">Enter DB</string>
+    <string name="buttonDeleteAll_name">Delete All</string>
+
     <string name="display_name">Anticipated time</string>
+    <string name="displayTotal_name">Total time</string>
 </resources>

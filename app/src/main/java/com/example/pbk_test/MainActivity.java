@@ -2,34 +2,51 @@ package com.example.pbk_test;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CipherParameters;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyParameters;
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Field;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    // public static String propertiesPath = new String(); // deprecated
     private static boolean isFirstTime = true;
 
     /**
-     * Run the algorithm.
-     * @param   view            Required by Android Studio.
-     * @throws  IOException     Error occurred when a.properties is not found.
+     * Enter database button event.
+     * @param view Required by Android Studio
+     */
+    public void showDatabase(View view) {
+        Intent intent = new Intent(this, DatabaseActivity.class);
+        startActivity(intent);
+    }
+
+    /**
+     * Run the test algorithm.
+     * @param   view            Required by Android Studio
+     * @throws  IOException     Error when a.properties is not found
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public void initiate(View view) throws IOException {
-        TextView res = findViewById(R.id.result);
-
+    public void initiateTest(View view) throws IOException {
         // First KeyGen takes more time
         long startTime1 = System.currentTimeMillis();
         BLS01 bls01 = new BLS01(this);
@@ -43,22 +60,21 @@ public class MainActivity extends AppCompatActivity {
             String message = "Hello, world!";
             bls01.verify(bls01.sign(message, keyPair.getPrivate()), message, keyPair.getPublic());
             String timeTaken2 = "Time taken - Verify: " + (System.currentTimeMillis() - startTime2) + "ms";
-            res.setText(timeTaken1 + "\n" + timeTaken2);
+            display(timeTaken1 + "\n" + timeTaken2);
         }
     }
 
     /**
      * Clear the text shown.
-     * @param view Required by Android Studio.
+     * @param view Required by Android Studio
      */
     public void clear(View view) {
-        TextView res = findViewById(R.id.result);
-        res.setText(getString(R.string.display_name));
+        display(getString(R.string.display_name));
     }
 
     /**
      * Required by Android Studio.
-     * @param savedInstanceState Required by Android Studio.
+     * @param savedInstanceState Required by Android Studio
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -68,29 +84,19 @@ public class MainActivity extends AppCompatActivity {
 
         // Pre-do KeyGen to make it faster
         try {
-            initiate(getWindow().getDecorView());
+            initiateTest(getWindow().getDecorView());
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        /* deprecated
-        long startTime = System.currentTimeMillis();
-        try {
-            propertiesPath = getCacheFile("a.properties", getApplicationContext()).toPath().toString();
-            Log.i("PBK_Test", propertiesPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Log.i("PBK_Test", String.valueOf(System.currentTimeMillis() - startTime));
-         */
     }
+
 
     /**
      * Get path of the given file in assets.
-     * @param   path        Path to file.
-     * @param   context     Context of the activity.
-     * @return              File object containing file path.
-     * @throws  IOException Error occurred when file is not found.
+     * @param   path        Path to file
+     * @param   context     Context of the activity
+     * @return              File object containing file path
+     * @throws  IOException Error when file is not found
      */
     public static File getCacheFile(String path, Context context) throws IOException {
         File cacheFile = new File(context.getCacheDir(), path);
@@ -114,5 +120,57 @@ public class MainActivity extends AppCompatActivity {
             throw new IOException("Could not open file", e);
         }
         return cacheFile;
+    }
+
+    /**
+     * Convert byte array to CipherParameter. Only public key is supported for now, since this function requires g.
+     * @param bytes     Byte array input
+     * @param g         g, for public key conversion
+     * @param context   Current application context
+     * @return          Cipherparameter
+     * @throws IOException Error when a.properties is not found
+     */
+    public static CipherParameters getCipherFromBytes(byte[] bytes, byte[] g, Context context) throws IOException {
+        Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
+        Field f = pairing.getG2();
+        Element e = f.newElement();
+        e.setFromBytes(bytes);
+
+        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), MainActivity.getElementFromBytes(g, context));
+        BLS01PublicKeyParameters pkParam = new BLS01PublicKeyParameters(param, e);
+        return pkParam;
+    }
+
+    /**
+     * Convert byte array to Element.
+     * @param bytes         Byte array input
+     * @param context       Current application context
+     * @return              Element
+     * @throws IOException  Error when a.properties is not found
+     */
+    public static Element getElementFromBytes(byte[] bytes, Context context) throws IOException {
+        Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
+        Field f = pairing.getG2();
+        Element e = f.newElement();
+        e.setFromBytes(bytes);
+        return e;
+    }
+
+    /**
+     * Convert Cipherparameter to byte array.
+     * @param cp    Cipherparameter input
+     * @return      Byte array
+     */
+    public static byte[] getBytesFromCipher(CipherParameters cp) {
+        return ((BLS01PublicKeyParameters)((BLS01KeyParameters)cp)).getPk().toBytes();
+    }
+
+    /**
+     * Display string in textView "result"
+     * @param str String to be displayed
+     */
+    public void display(String str) {
+        TextView res = findViewById(R.id.result);
+        res.setText(str);
     }
 }
