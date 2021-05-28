@@ -60,7 +60,7 @@
       android:layout_height="wrap_content"
       android:layout_marginStart="14dp"
       android:layout_marginTop="14dp"
-      android:onClick="meetGen"
+      android:onClick="meetGenConCur"
       android:text="@string/buttonMeetGen_name"
       app:layout_constraintStart_toEndOf="@+id/buttonKeyGen"
       app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
@@ -79,7 +79,7 @@
       android:layout_height="wrap_content"
       android:layout_marginStart="14dp"
       android:layout_marginTop="14dp"
-      android:onClick="meetVer"
+      android:onClick="meetVerConcur"
       android:text="@string/buttonMeetVer_name"
       app:layout_constraintStart_toEndOf="@+id/buttonMeetGen"
       app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
@@ -89,7 +89,7 @@
       android:layout_width="0dp"
       android:layout_height="wrap_content"
       android:layout_marginBottom="8dp"
-      android:onClick="deleteAll"
+      android:onClick="deleteAllConcur"
       android:text="@string/buttonDeleteAll_name"
       app:layout_constraintBottom_toTopOf="@+id/resultDB"
       app:layout_constraintEnd_toEndOf="parent"

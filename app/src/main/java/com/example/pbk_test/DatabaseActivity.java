@@ -3,6 +3,7 @@ package com.example.pbk_test;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.room.Room;
 
+import android.app.Application;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
@@ -31,7 +32,8 @@ public class DatabaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_database);
 
-        db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-name").allowMainThreadQueries().build();
+        // db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-name").allowMainThreadQueries().build();
+        db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-name").build();
         user = new User(getApplicationContext());
         timeTotal = 0;
 
@@ -55,7 +57,7 @@ public class DatabaseActivity extends AppCompatActivity {
     }
 
     /**
-     * Meet a person -- generate user's assertion.
+     * (Without concurrency) Meet a person -- generate user's assertion.
      * @param view Required by Android Studio
      */
     public void meetGen(View view) {
@@ -71,7 +73,28 @@ public class DatabaseActivity extends AppCompatActivity {
     }
 
     /**
-     * Meet a person -- verify assertion received.
+     * (With concurrency) Meet a person -- generate user's assertion.
+     * @param view Required by Android Studio
+     */
+    public void meetGenConCur(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    long startTime = System.currentTimeMillis();
+                    Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, db);
+                    appendTable((TableLayout) findViewById(R.id.tableLayout), assertion.msg);
+                    long timeTakenNum = System.currentTimeMillis() - startTime;
+                    String timeTaken = "Time taken - meetGen: " + timeTakenNum + "ms";
+
+                    timeTotal += timeTakenNum;
+                    display(timeTaken);
+                    displayTotal(String.valueOf(timeTotal));
+                }
+        );
+    }
+
+    /**
+     * (Without concurrency) Meet a person -- verify assertion received.
      * @param view          Required by Android Studio
      * @throws IOException  Error when a.properties is not found
      */
@@ -92,22 +115,72 @@ public class DatabaseActivity extends AppCompatActivity {
     }
 
     /**
-     * Delete all data in the database.
+     * (With concurrency) Meet a person -- verify assertion received.
+     * @param view          Required by Android Studio
+     * @throws IOException  Error when a.properties is not found
+     */
+    public void meetVerConcur(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    try {
+                        // Create a new user and generate assertion
+                        User user_alter = new User(getApplicationContext());
+                        user_alter.keyGen();
+                        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE);
+
+                        long startTime = System.currentTimeMillis();
+                        user.verifyAssertion(assertion_alter, getApplicationContext());
+                        long timeTakenNum = System.currentTimeMillis() - startTime;
+                        String timeTaken = "Time taken - meetVer: " + timeTakenNum + "ms";
+
+                        timeTotal += timeTakenNum;
+                        display(timeTaken);
+                        displayTotal(String.valueOf(timeTotal));
+                    } catch (Exception e) {}
+                }
+        );
+    }
+
+    /**
+     * (Without concurrency) Delete all data in the database.
      * @param view Required by Android Studio
      */
     public void deleteAll(View view) {
         db.assertionDao().delete();
+        clearTable((TableLayout) findViewById(R.id.tableLayout));
+        timeTotal = 0;
+    }
+
+    /**
+     * (With concurrency) Delete all data in the database.
+     * @param view Required by Android Studio
+     */
+    public void deleteAllConcur(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    db.assertionDao().delete();
+                    clearTable((TableLayout) findViewById(R.id.tableLayout));
+                    timeTotal = 0;
+                }
+        );
     }
 
     /**
      * Initialize and display the table.
      */
     public void initializeTable() {
-        TableLayout tl = (TableLayout) findViewById(R.id.tableLayout);
-        List<Assertion> list = db.assertionDao().getAll();
-        for (int i=0; i<list.size();i++) {
-            appendTable(tl, list.get(i).msg);
-        }
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    TableLayout tl = (TableLayout) findViewById(R.id.tableLayout);
+                    List<Assertion> list = db.assertionDao().getAll();
+                    for (int i = 0; i < list.size(); i++) {
+                        appendTable(tl, list.get(i).msg);
+                    }
+                }
+        );
     }
 
     /**
@@ -128,7 +201,11 @@ public class DatabaseActivity extends AppCompatActivity {
         label_id.setPadding(5, 5, 5, 5);
         newRow.addView(label_id);
 
-        tl.addView(newRow);
+        runOnUiThread(() -> tl.addView(newRow));
+    }
+
+    public void clearTable(TableLayout tl) {
+        runOnUiThread(() -> tl.removeAllViews());
     }
 
     /**
@@ -136,8 +213,10 @@ public class DatabaseActivity extends AppCompatActivity {
      * @param str String to be displayed
      */
     public void display(String str) {
-        TextView res = findViewById(R.id.resultDB);
-        res.setText(str);
+        runOnUiThread(() -> {
+            TextView res = findViewById(R.id.resultDB);
+            res.setText(str);
+        });
     }
 
     /**
@@ -145,7 +224,9 @@ public class DatabaseActivity extends AppCompatActivity {
      * @param str String to be displayed
      */
     public void displayTotal(String str) {
-        TextView res = findViewById(R.id.resultTotal);
-        res.setText("Total time taken: " + str + "ms");
+        runOnUiThread(() -> {
+            TextView res = findViewById(R.id.resultTotal);
+            res.setText("Total time taken: " + str + "ms");
+        });
     }
 }

@@ -32,14 +32,6 @@ public class User {
     }
 
     /**
-     * Update pseudonym.
-     * WIP.
-     */
-    public void updateNym() {
-        // this.nym = this.nym.update();
-    }
-
-    /**
      * Generate an Assertion and insert to database.
      * @param attr  Attributes
      * @return      Assertion
@@ -69,15 +61,7 @@ public class User {
     }
 
     /**
-     * WIP
-     */
-    public void updateAssertions() {
-        // WIP
-        // Update assertions in DB
-    }
-
-    /**
-     * Compress signatures
+     * Compress signatures.
      * @param signatures    Signatures received
      * @return              Compressed signatures
      */
@@ -97,6 +81,23 @@ public class User {
         // this.updateAssertions();
         // delete all assertions in DB
         return generateAssertion("", db);
+    }
+
+    /**
+     * Update pseudonym.
+     * WIP.
+     */
+    public void updateNym() {
+        // this.nym = this.nym.update();
+    }
+
+    /**
+     * Update assertions.
+     * WIP
+     */
+    public void updateAssertions() {
+        // WIP
+        // Update assertions in DB
     }
 
     /**
