@@ -20,8 +20,6 @@ public class DatabaseActivity extends AppCompatActivity {
     public final String ATTR_EXAMPLE = "altitude-latitude-longitude;mm-dd-hh-mm-ss;range-unit";
 
     public User user;
-    public Database db;
-
     public long timeTotal;
 
     /**
@@ -33,7 +31,6 @@ public class DatabaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_database);
 
-        db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-main").build();
         user = new User(getApplicationContext());
         timeTotal = 0;
 
@@ -42,6 +39,7 @@ public class DatabaseActivity extends AppCompatActivity {
 
     /**
      * Generate key pair.
+     * This should NOT run in parallel since keypair is required in every single operation.
      * @param view          Required by Android Studio
      * @throws IOException  Error when a.properties is not found
      */
@@ -58,12 +56,14 @@ public class DatabaseActivity extends AppCompatActivity {
 
     /**
      * (Without concurrency) Meet a person -- generate user's assertion.
+     * You should NEVER use this method unless you modify the database to be manipulate-able in UI.
      * @param view Required by Android Studio
      */
+    @Deprecated
     public void meetGen(View view) {
         long startTime = System.currentTimeMillis();
-        Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, db);
-        appendTable((TableLayout) findViewById(R.id.tableLayout), assertion.msg);
+        Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, true);
+        appendTable(findViewById(R.id.tableLayout), assertion.msg);
         long timeTakenNum = System.currentTimeMillis() - startTime;
         String timeTaken = "Time taken - meetGen: " + timeTakenNum + "ms";
 
@@ -81,8 +81,8 @@ public class DatabaseActivity extends AppCompatActivity {
         exec.getBackground().execute(
                 () -> {
                     long startTime = System.currentTimeMillis();
-                    Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, db);
-                    appendTable((TableLayout) findViewById(R.id.tableLayout), assertion.msg);
+                    Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, true);
+                    appendTable(findViewById(R.id.tableLayout), assertion.msg);
                     long timeTakenNum = System.currentTimeMillis() - startTime;
                     String timeTaken = "Time taken - meetGen: " + timeTakenNum + "ms";
 
@@ -98,11 +98,12 @@ public class DatabaseActivity extends AppCompatActivity {
      * @param view          Required by Android Studio
      * @throws IOException  Error when a.properties is not found
      */
+    @Deprecated
     public void meetVer(View view) throws IOException {
         // Create a new user and generate assertion
         User user_alter = new User(getApplicationContext());
         user_alter.keyGen();
-        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE);
+        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
 
         long startTime = System.currentTimeMillis();
         user.verifyAssertion(assertion_alter, getApplicationContext());
@@ -127,7 +128,7 @@ public class DatabaseActivity extends AppCompatActivity {
                         // Create a new user and generate assertion
                         User user_alter = new User(getApplicationContext());
                         user_alter.keyGen();
-                        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE);
+                        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
 
                         long startTime = System.currentTimeMillis();
                         boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
@@ -149,11 +150,13 @@ public class DatabaseActivity extends AppCompatActivity {
 
     /**
      * (Without concurrency) Delete all data in the database.
+     * You should NEVER use this method unless you modify the database to be manipulate-able in UI.
      * @param view Required by Android Studio
      */
+    @Deprecated
     public void deleteAll(View view) {
-        db.assertionDao().delete();
-        clearTable((TableLayout) findViewById(R.id.tableLayout));
+        user.db.assertionDao().delete();
+        clearTable(findViewById(R.id.tableLayout));
         timeTotal = 0;
     }
 
@@ -165,8 +168,8 @@ public class DatabaseActivity extends AppCompatActivity {
         ApplicationExecutors exec = new ApplicationExecutors();
         exec.getBackground().execute(
                 () -> {
-                    db.assertionDao().delete();
-                    clearTable((TableLayout) findViewById(R.id.tableLayout));
+                    user.db.assertionDao().delete();
+                    clearTable(findViewById(R.id.tableLayout));
                     timeTotal = 0;
                 }
         );
@@ -179,8 +182,8 @@ public class DatabaseActivity extends AppCompatActivity {
         ApplicationExecutors exec = new ApplicationExecutors();
         exec.getBackground().execute(
                 () -> {
-                    TableLayout tl = (TableLayout) findViewById(R.id.tableLayout);
-                    List<Assertion> list = db.assertionDao().getAll();
+                    TableLayout tl = findViewById(R.id.tableLayout);
+                    List<Assertion> list = user.db.assertionDao().getAll();
                     for (int i = 0; i < list.size(); i++) {
                         appendTable(tl, list.get(i).msg);
                     }
@@ -209,6 +212,10 @@ public class DatabaseActivity extends AppCompatActivity {
         runOnUiThread(() -> tl.addView(newRow));
     }
 
+    /**
+     * Clear the table.
+     * @param tl Table to be cleared
+     */
     public void clearTable(TableLayout tl) {
         runOnUiThread(() -> tl.removeAllViews());
     }

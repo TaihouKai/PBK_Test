@@ -2,10 +2,14 @@ package com.example.pbk_test;
 
 import android.content.Context;
 
+import androidx.room.Room;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -19,13 +23,23 @@ public class User {
     public CipherParameters nym;
     public BLS01 bls01;
     public AsymmetricCipherKeyPair keyPair;
+    public Database db;
+    public CompressedDatabase cdb;
 
     /**
      * Construct a new user.
+     * A normal user.
+     * Note: Normally, user should be CONSISTENT in a real application, since you don't want to
+     * lose your data after closing the application. However, in our demo, the user (and associated
+     * database) is newed every single time you enter the activity (UI).
+     * This is simply because we are here only to prove its performance, instead of developing a
+     * REAL application.
      * @param context Current application context
      */
     public User(Context context) {
         this.bls01 = new BLS01(context);
+        db = Room.databaseBuilder(context, Database.class, "database-main").build();
+        cdb = Room.databaseBuilder(context, CompressedDatabase.class, "database-compressed").build();
     }
 
     /**
@@ -39,22 +53,16 @@ public class User {
 
     /**
      * Generate an Assertion and insert to database.
-     * @param attr  Attributes
-     * @return      Assertion
+     * @param attr      Attributes
+     * @param insert    Whether to insert this assertion into db
+     * @return          Assertion
      */
-    public Assertion generateAssertion(String attr, Database db) {
-        Assertion assertion = new Assertion(this.nym, User.generateMsg(attr), this.bls01.sign(attr, this.keyPair.getPrivate()));
-        db.assertionDao().insert(assertion);
+    public Assertion generateAssertion(String attr, boolean insert) {
+        String msg = User.generateMsg(attr);
+        Assertion assertion = new Assertion(this.nym, msg, this.bls01.sign(msg, this.keyPair.getPrivate()));
+        if (insert)
+            db.assertionDao().insert(assertion);
         return assertion;
-    }
-
-    /**
-     * Generate an assertion WITHOUT inserting to database.
-     * @param attr  Attributes
-     * @return      Assertion
-     */
-    public Assertion generateAssertion(String attr) {
-        return new Assertion(this.nym, User.generateMsg(attr), this.bls01.sign(attr, this.keyPair.getPrivate()));
     }
 
     /**
@@ -67,14 +75,20 @@ public class User {
     }
 
     /**
-     * WIP
-     * @param signatures    Signatures received
-     * @return              Compressed signatures
+     * Compress all signatures
+     * @return Compressed signatures
      */
-    public byte[] save(List<byte[]> signatures, Context context) throws IOException {
-
-
-        return new byte[0];
+    public void save() throws IOException {
+        List<Assertion> assertions = this.db.assertionDao().getAll();
+        List<byte[]> signatures = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>();
+        for (Assertion assertion: assertions) {
+            signatures.add(assertion.signature);
+            ids.add(assertion.id);
+        }
+        byte[] compressedSig = this.bls01.aggregate(signatures);
+        cdb.compressedAssertionDao().insert(new CompressedAssertion(compressedSig, ids));
+        this.db.assertionDao().delete();
     }
 
     /**
@@ -88,7 +102,7 @@ public class User {
 
         // this.updateAssertions();
         // delete all assertions in DB
-        return generateAssertion("", db);
+        return generateAssertion("", false);
     }
 
     /**
