@@ -13,8 +13,11 @@ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParamet
 @Entity
 public class Assertion {
 
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     @NonNull
+    public int id;
+
+    @ColumnInfo(name = "pseudonym")
     public byte[] nym;
 
     @ColumnInfo(name = "message")

@@ -9,9 +9,9 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.List;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.engines.BLS01Signer;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01KeyPairGenerator;
@@ -65,8 +65,8 @@ public class BLS01 {
         return signature;
     }
 
-    public byte[] aggregate(List<byte[]> signatures) {
-        Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString()));
+    public byte[] aggregate(List<byte[]> signatures) throws IOException {
+        Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
         Field f = pairing.getG1();
         Element aggregated = f.newElement(1);
         for (byte[] signature: signatures) {

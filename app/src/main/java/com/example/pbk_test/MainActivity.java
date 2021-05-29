@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
      * @param bytes     Byte array input
      * @param g         g, for public key conversion
      * @param context   Current application context
-     * @return          Cipherparameter
+     * @return          CipherParameter
      * @throws IOException Error when a.properties is not found
      */
     public static CipherParameters getCipherFromBytes(byte[] bytes, byte[] g, Context context) throws IOException {
@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         Element e = f.newElement();
         e.setFromBytes(bytes);
 
-        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), MainActivity.getElementFromBytes(g, context));
+        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), MainActivity.getElementFromBytes(g, 2, context));
         BLS01PublicKeyParameters pkParam = new BLS01PublicKeyParameters(param, e);
         return pkParam;
     }
@@ -144,11 +144,12 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Convert byte array to Element.
      * @param bytes         Byte array input
+     * @param type          1 -> G1 (sig); 2 -> G2 (pk/g)
      * @param context       Current application context
      * @return              Element
      * @throws IOException  Error when a.properties is not found
      */
-    public static Element getElementFromBytes(byte[] bytes, Context context) throws IOException {
+    public static Element getElementFromBytes(byte[] bytes, int type, Context context) throws IOException {
         Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
         Field f = pairing.getG2();
         Element e = f.newElement();
@@ -157,12 +158,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Convert Cipherparameter to byte array.
-     * @param cp    Cipherparameter input
+     * Convert CipherParameter to byte array.
+     * @param cp    CipherParameter input (i.e. public key)
      * @return      Byte array
      */
     public static byte[] getBytesFromCipher(CipherParameters cp) {
-        return ((BLS01PublicKeyParameters)((BLS01KeyParameters)cp)).getPk().toBytes();
+        return ((BLS01PublicKeyParameters)cp).getPk().toBytes();
     }
 
     /**

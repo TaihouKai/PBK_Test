@@ -6,7 +6,13 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Field;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 public class User {
 
@@ -61,21 +67,23 @@ public class User {
     }
 
     /**
-     * Compress signatures.
+     * WIP
      * @param signatures    Signatures received
      * @return              Compressed signatures
      */
-    public byte[] save(byte[][] signatures) {
-        // WIP
+    public byte[] save(List<byte[]> signatures, Context context) throws IOException {
+
+
         return new byte[0];
     }
 
     /**
      * WIP
-     * @param assertions
+     * @param signature
+     * @param db
      * @return
      */
-    public Assertion show(Assertion[] assertions, Database db) {
+    public Assertion show(byte[] signature, Database db) {
         // WIP
 
         // this.updateAssertions();
@@ -85,7 +93,7 @@ public class User {
 
     /**
      * Update pseudonym.
-     * WIP.
+     * WIP
      */
     public void updateNym() {
         // this.nym = this.nym.update();

@@ -6,6 +6,7 @@ import androidx.room.Room;
 import android.app.Application;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -32,8 +33,7 @@ public class DatabaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_database);
 
-        // db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-name").allowMainThreadQueries().build();
-        db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-name").build();
+        db = Room.databaseBuilder(getApplicationContext(), Database.class, "database-main").build();
         user = new User(getApplicationContext());
         timeTotal = 0;
 
@@ -130,13 +130,18 @@ public class DatabaseActivity extends AppCompatActivity {
                         Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE);
 
                         long startTime = System.currentTimeMillis();
-                        user.verifyAssertion(assertion_alter, getApplicationContext());
+                        boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
                         long timeTakenNum = System.currentTimeMillis() - startTime;
                         String timeTaken = "Time taken - meetVer: " + timeTakenNum + "ms";
 
                         timeTotal += timeTakenNum;
                         display(timeTaken);
                         displayTotal(String.valueOf(timeTotal));
+
+                        if (res)
+                            Log.d("PBK_Test - Verification", "Success");
+                        else
+                            Log.d("PBK_Test - Verification", "Fail");
                     } catch (Exception e) {}
                 }
         );
