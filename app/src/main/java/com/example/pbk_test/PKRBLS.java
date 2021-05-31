@@ -94,7 +94,7 @@ public class PKRBLS {
      * @param publicKey      public key to be updated.
      * @throws IOException   Error when a.properties is not found.
      */
-    public CipherParameters updatePK(CipherParameters publicKey) throws IOException {
+    public CipherParameters updatePK(CipherParameters publicKey, Element r) throws IOException {
         Element g = ((BLS01KeyParameters)publicKey).getParameters().getG();
         Element pk = ((BLS01PublicKeyParameters)((BLS01KeyParameters)publicKey)).getPk();
         BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), MainActivity.getElementFromBytes(g, 2, context));
@@ -102,7 +102,7 @@ public class PKRBLS {
         Pairing pairing = PairingFactory.getPairing(param.getParameters());
 
         // Generate the new random number r
-        Element r = pairing.getZr().newRandomElement();
+//        Element r = pairing.getZr().newRandomElement();
 
         // Update the corresponding public key
         Element updated = pk.powZn(r);
