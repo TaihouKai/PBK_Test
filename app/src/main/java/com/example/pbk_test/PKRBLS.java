@@ -90,36 +90,44 @@ public class PKRBLS {
     }
 
     /**
-     * Get pairing from given public key.
-     * @param publicKey      public key.
-     * @throws IOException   Error when a.properties is not found.
-     */
-    public Pairing getPairingFromPK(CipherParameters publicKey) throws IOException {
-        Element g = ((BLS01KeyParameters)publicKey).getParameters().getG();
-        Element pk = ((BLS01PublicKeyParameters)((BLS01KeyParameters)publicKey)).getPk();
-        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), MainActivity.getElementFromBytes(g, 2, context));
-
-        Pairing pairing = PairingFactory.getPairing(param.getParameters());
-        return pairing;
-    }
-
-    /**
      * Update public key with a random number r.
      * @param publicKey      public key to be updated.
      * @throws IOException   Error when a.properties is not found.
      */
     public CipherParameters updatePK(CipherParameters publicKey) throws IOException {
-        Pairing pairing = getPairingFromPK(publicKey);
+        Element g = ((BLS01KeyParameters)publicKey).getParameters().getG();
+        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
+
+        Pairing pairing = PairingFactory.getPairing(param.getParameters());
 
 //         Generate the new random number r
         Element r = pairing.getZr().newRandomElement();
 
         // Update the corresponding public key
+        Element pk = ((BLS01PublicKeyParameters)((BLS01KeyParameters)publicKey)).getPk();
         Element updated = pk.powZn(r);
         BLS01PublicKeyParameters updatedPK = new BLS01PublicKeyParameters(param, updated.getImmutable());
 
         return updatedPK;
     }
+
+//    /**
+//     * Update signature with a random number r.
+//     * @param signature      signature to be updated.
+//     * @throws IOException   Error when a.properties is not found.
+//     */
+//    public byte[] updateAssert(byte[] signature, Element r) throws IOException {
+//        Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
+//        Element sig = pairing.getG1().newElementFromBytes(signature);
+//
+////        Element r = pairing.getZr().newRandomElement();
+//
+//        // Update the signature
+//        Element updated = sig.powZn(r);
+//        byte[] updatedSIG = updated.toBytes();
+//
+//        return updatedSIG;
+//    }
 
     /**
      * Aggregate multiple signatures from PKR-BLS scheme.
