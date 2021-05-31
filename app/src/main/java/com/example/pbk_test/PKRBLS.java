@@ -116,11 +116,11 @@ public class PKRBLS {
      * @param signature      signature to be updated.
      * @throws IOException   Error when a.properties is not found.
      */
-    public byte[] updateSIG(byte[] signature) throws IOException {
+    public byte[] updateSIG(byte[] signature, Element r) throws IOException {
         Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
         Element sig = pairing.getG1().newElementFromBytes(signature);
 
-        Element r = pairing.getZr().newRandomElement();
+//        Element r = pairing.getZr().newRandomElement();
 
         // Update the signature
         Element updated = sig.powZn(r);
