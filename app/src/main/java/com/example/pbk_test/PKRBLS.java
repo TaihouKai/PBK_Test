@@ -142,16 +142,18 @@ public class PKRBLS {
      * Update signature with a random number r.
      * @param ca             a compressed assertion
      * @throws IOException   Error when a.properties is not found.
+     * nyms in assertions pointed by ca also need to be updated.
      */
-    public static void updateCompressedAssertions(CompressedAssertion ca) throws IOException {
-        Element g = ((BLS01KeyParameters) nyms.get(0)).getParameters().getG();
-        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
+//    public static void updateCompressedAssertions(CompressedAssertion ca) throws IOException {
+//        Element g = ((BLS01KeyParameters) nyms.get(0)).getParameters().getG();
+//        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
+//
+//        Pairing pairing = PairingFactory.getPairing(param.getParameters());
+//        Element r = pairing.getZr().newRandomElement();
+//
+//        ca.signature = updateSIG(ca.signature, param, r);
+//    }
 
-        Pairing pairing = PairingFactory.getPairing(param.getParameters());
-        Element r = pairing.getZr().newRandomElement();
-
-        ca.signature = updateSIG(ca.signature, param, r);
-    }
 
     /**
      * Aggregate multiple signatures from PKR-BLS scheme.
