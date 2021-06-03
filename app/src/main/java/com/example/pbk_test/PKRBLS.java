@@ -104,47 +104,20 @@ public class PKRBLS {
 
         return updatedPK;
     }
-
-    /**
-     * Gen initial nym=(g^r, pk^r).
-     * @param publicKey      public key of BLS scheme.
-     * @throws IOException   Error when a.properties is not found.
-     */
-    public CipherParameters[] genNym(CipherParameters publicKey) throws IOException {
-        Element g = ((BLS01KeyParameters) publicKey).getParameters().getG();
-        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
-
-        Pairing pairing = PairingFactory.getPairing(param.getParameters());
-        Element r = pairing.getZr().newRandomElement();
-        BLS01PublicKeyParameters gr = new BLS01PublicKeyParameters(param, g.powZn(r).getImmutable());
-
-        CipherParameters[] initNym = {gr, updatePK(publicKey, param, r)};
-        return initNym;
-    }
-
-    /**
-     * Update nym with randomness r.
-     * @param nym            nym=(g^r, pk^r) can be updated with new r' to (g^rr',pk^rr').
-     * @throws IOException   Error when a.properties is not found.
-     */
-    public CipherParameters[] updateNym(CipherParameters[] nym, BLS01Parameters param, Element r) throws IOException {
-        CipherParameters[] updatedNym = {updatePK(nym[0], param, r), updatePK(nym[1], param, r)};
-        return updatedNym;
-    }
     
     /**
      * Update nym.
      * @param nym            nym=(g^r, pk^r) can be updated with new r' to (g^rr',pk^rr').
      * @throws IOException   Error when a.properties is not found.
      */
-    public CipherParameters[] updateNym(CipherParameters[] nym) throws IOException {
-        Element g = ((BLS01KeyParameters) nym[1]).getParameters().getG();
+    public CipherParameters updateNym(CipherParameters nym) throws IOException {
+        Element g = ((BLS01KeyParameters) nym).getParameters().getG();
         BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
 
         Pairing pairing = PairingFactory.getPairing(param.getParameters());
         Element r = pairing.getZr().newRandomElement();
 
-        CipherParameters[] updatedNym = updateNym(nym, param, r);
+        CipherParameters updatedNym = updatePK(nym, param, r);
         return updatedNym;
     }
 
@@ -167,24 +140,17 @@ public class PKRBLS {
 
     /**
      * Update signature with a random number r.
-     * @param nyms           a list of nyms to be updated.
-     * @param aggregated     the corresponding aggregate signature.
+     * @param ca             a compressed assertion
      * @throws IOException   Error when a.properties is not found.
      */
-    public static void updateAssertions(List<CipherParameters[]> nyms, byte[] aggregated) throws IOException {
-        Element g = ((BLS01KeyParameters) nyms.get(0)[1]).getParameters().getG();
+    public static void updateCompressedAssertions(CompressedAssertion ca) throws IOException {
+        Element g = ((BLS01KeyParameters) nyms.get(0)).getParameters().getG();
         BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
 
         Pairing pairing = PairingFactory.getPairing(param.getParameters());
         Element r = pairing.getZr().newRandomElement();
 
-        List<CipherParameters[]> updatedNyms = new ArrayList<CipherParameters[]>();
-        for (CipherParameters[] nym: nyms) {
-            CipherParameters[] updatedNym = updateNym(nym, param, r);
-            updatedNyms.add(updatedNym);
-        }
-
-        byte[] updatedSIG = updateSIG(aggregated, param, r);
+        ca.signature = updateSIG(ca.signature, param, r);
     }
 
     /**
