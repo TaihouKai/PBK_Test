@@ -21,6 +21,7 @@ public class DatabaseActivity extends AppCompatActivity {
     public final String ATTR_EXAMPLE = "altitude-latitude-longitude;mm-dd-hh-mm-ss;range-unit";
 
     public User user;
+    public Doctor doctor;
     public long timeTotal;
 
     /**
@@ -34,10 +35,12 @@ public class DatabaseActivity extends AppCompatActivity {
 
         try {
             user = new User(getApplicationContext());
+            doctor = new Doctor(getApplicationContext());
         } catch (IOException e) {}
         timeTotal = 0;
 
         initializeTable();
+        initializeTableCompressed();
     }
 
     /**
@@ -147,11 +150,11 @@ public class DatabaseActivity extends AppCompatActivity {
                         display(timeTaken);
                         displayTotal(String.valueOf(timeTotal));
                         if (res) {
-                            Log.d("PBK_Test - Verification", "Success");
+                            Log.d("PBK_Test - VerifyAssertion", "Success");
                             appendTable(findViewById(R.id.tableLayout), assertion_alter.msg);
                         }
                         else
-                            Log.d("PBK_Test - Verification", "Fail");
+                            Log.d("PBK_Test - VerifyAssertion", "Fail");
                     } catch (Exception e) {}
                 }
         );
@@ -180,6 +183,8 @@ public class DatabaseActivity extends AppCompatActivity {
         ApplicationExecutors exec = new ApplicationExecutors();
         exec.getBackground().execute(
                 () -> {
+                    long startTime = System.currentTimeMillis();
+
                     // Get all CompressedAssertion's
                     List<CompressedAssertion> compressedList = user.db.compressedAssertionDao().getAll();
                     // Record list to be sent to doctor
@@ -205,6 +210,36 @@ public class DatabaseActivity extends AppCompatActivity {
                         recordList.add(r);
                     }
                     // Send recordList to doctor ...
+                    if (this.doctor.verifyShow(recordList))
+                        Log.d("PBK_Test - VerifyShow", "Success");
+                    else
+                        Log.d("PBK_Test - VerifyShow", "Fail");
+
+
+                    long timeTakenNum = System.currentTimeMillis() - startTime;
+                    String timeTaken = "Time taken - show: " + timeTakenNum + "ms";
+
+                    timeTotal = timeTakenNum;
+                    display(timeTaken);
+                    displayTotal(String.valueOf(timeTotal));
+                }
+        );
+    }
+
+    public void updateConcur(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    long startTime = System.currentTimeMillis();
+
+                    this.user.updateNym();
+
+                    long timeTakenNum = System.currentTimeMillis() - startTime;
+                    String timeTaken = "Time taken - updateNym: " + timeTakenNum + "ms";
+
+                    timeTotal = timeTakenNum;
+                    display(timeTaken);
+                    displayTotal(String.valueOf(timeTotal));
                 }
         );
     }
@@ -304,6 +339,20 @@ public class DatabaseActivity extends AppCompatActivity {
                     List<Assertion> list = user.db.assertionDao().getAll();
                     for (int i = 0; i < list.size(); i++) {
                         appendTable(tl, list.get(i).msg);
+                    }
+                }
+        );
+        exec.getBackground().shutdown();
+    }
+
+    public void initializeTableCompressed() {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    TableLayout tl = findViewById(R.id.tableLayoutCompressed);
+                    List<CompressedAssertion> list = user.db.compressedAssertionDao().getAll();
+                    for (int i = 0; i < list.size(); i++) {
+                        appendTable(tl, new String(list.get(i).signature));
                     }
                 }
         );

@@ -16,6 +16,8 @@
     <string name="buttonSave_name">Save</string>
     <string name="buttonShow_name">Show</string>
 
+    <string name="buttonUpdate_name">Update</string>
+
     <string name="display_name">Anticipated time</string>
     <string name="displayTotal_name">Total time</string>
 

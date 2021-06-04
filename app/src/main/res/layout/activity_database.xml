@@ -43,46 +43,115 @@
       app:layout_constraintTop_toBottomOf="@+id/resultDB"
       app:layout_constraintVertical_bias="1.0" />
 
-  <Button
-      android:id="@+id/buttonKeyGen"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="14dp"
-      android:layout_marginTop="14dp"
-      android:onClick="generateKey"
-      android:text="@string/buttonKeyGen_name"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
-
-  <Button
-      android:id="@+id/buttonMeetGen"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="48dp"
-      android:layout_marginTop="12dp"
-      android:onClick="meetGenConCur"
-      android:text="@string/buttonMeetGen_name"
-      app:layout_constraintStart_toEndOf="@+id/buttonKeyGen"
-      app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
-
   <TableLayout
       android:id="@+id/tableLayout"
-      android:layout_width="0dp"
-      android:layout_height="373dp"
+      android:layout_width="393dp"
+      android:layout_height="187dp"
       app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintHorizontal_bias="1.0"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toTopOf="parent" />
+
+  <TableLayout
+      android:id="@+id/tableLayoutCompressed"
+      android:layout_width="395dp"
+      android:layout_height="127dp"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
 
   <Button
       android:id="@+id/buttonMeetVer"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginStart="48dp"
-      android:layout_marginTop="12dp"
+      android:layout_marginStart="44dp"
       android:onClick="meetVerConcur"
       android:text="@string/buttonMeetVer_name"
       app:layout_constraintStart_toEndOf="@+id/buttonMeetGen"
-      app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
+      app:layout_constraintTop_toTopOf="@+id/buttonMeetGen" />
+
+  <Button
+      android:id="@+id/buttonKeyGen"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="16dp"
+      android:layout_marginTop="14dp"
+      android:onClick="generateKey"
+      android:text="@string/buttonKeyGen_name"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/tableLayoutCompressed" />
+
+  <Button
+      android:id="@+id/buttonBLE"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:onClick="bleMode"
+      android:text="@string/buttonBLE_name"
+      app:layout_constraintStart_toStartOf="@+id/buttonShow"
+      app:layout_constraintTop_toTopOf="@+id/buttonDiscrete" />
+
+  <Button
+      android:id="@+id/buttonDiscrete"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="16dp"
+      android:layout_marginTop="20dp"
+      android:onClick="discreteMode"
+      android:text="@string/buttonDiscrete_name"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/buttonSave" />
+
+  <EditText
+      android:id="@+id/fieldTimes"
+      android:layout_width="66dp"
+      android:layout_height="39dp"
+      android:ems="10"
+      android:hint="@string/fieldTimes_hint"
+      android:importantForAutofill="no"
+      android:inputType="number"
+      app:layout_constraintStart_toStartOf="@+id/buttonUpdate"
+      app:layout_constraintTop_toTopOf="@+id/buttonBLE" />
+
+  <Button
+      android:id="@+id/buttonUpdate"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="44dp"
+      android:onClick="updateConcur"
+      android:text="@string/buttonUpdate_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonShow"
+      app:layout_constraintTop_toTopOf="@+id/buttonShow" />
+
+  <Button
+      android:id="@+id/buttonSave"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="16dp"
+      android:layout_marginTop="20dp"
+      android:onClick="saveConcur"
+      android:text="@string/buttonSave_name"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/buttonKeyGen" />
+
+  <Button
+      android:id="@+id/buttonShow"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="20dp"
+      android:onClick="showConcur"
+      android:text="@string/buttonShow_name"
+      app:layout_constraintStart_toStartOf="@+id/buttonMeetGen"
+      app:layout_constraintTop_toBottomOf="@+id/buttonKeyGen" />
+
+  <Button
+      android:id="@+id/buttonMeetGen"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="44dp"
+      android:onClick="meetGenConCur"
+      android:text="@string/buttonMeetGen_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonKeyGen"
+      app:layout_constraintTop_toTopOf="@+id/buttonKeyGen" />
 
   <Button
       android:id="@+id/buttonDeleteAll"
@@ -96,68 +165,4 @@
       app:layout_constraintHorizontal_bias="0.0"
       app:layout_constraintStart_toStartOf="parent" />
 
-  <EditText
-      android:id="@+id/fieldTimes"
-      android:layout_width="66dp"
-      android:layout_height="39dp"
-      android:layout_marginStart="8dp"
-      android:ems="10"
-      android:hint="@string/fieldTimes_hint"
-      android:importantForAutofill="no"
-      android:inputType="number"
-      app:layout_constraintBottom_toBottomOf="@+id/buttonRandom"
-      app:layout_constraintStart_toEndOf="@+id/buttonRandom"
-      app:layout_constraintTop_toTopOf="@+id/buttonRandom" />
-
-  <Button
-      android:id="@+id/buttonDiscrete"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="14dp"
-      android:layout_marginTop="14dp"
-      android:onClick="discreteMode"
-      android:text="@string/buttonDiscrete_name"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@+id/buttonKeyGen" />
-
-  <Button
-      android:id="@+id/buttonBLE"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="12dp"
-      android:onClick="bleMode"
-      android:text="@string/buttonBLE_name"
-      app:layout_constraintStart_toEndOf="@+id/buttonDiscrete"
-      app:layout_constraintTop_toTopOf="@+id/buttonDiscrete" />
-
-  <Button
-      android:id="@+id/buttonRandom"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="8dp"
-      android:text="@string/buttonRandom_name"
-      app:layout_constraintStart_toEndOf="@+id/buttonBLE"
-      app:layout_constraintTop_toTopOf="@+id/buttonBLE" />
-
-  <Button
-      android:id="@+id/buttonSave"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="14dp"
-      android:layout_marginTop="14dp"
-      android:onClick="saveConcur"
-      android:text="@string/buttonSave_name"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@+id/buttonDiscrete" />
-
-  <Button
-      android:id="@+id/buttonShow"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="12dp"
-      android:layout_marginTop="14dp"
-      android:onClick="showConcur"
-      android:text="@string/buttonShow_name"
-      app:layout_constraintStart_toEndOf="@+id/buttonSave"
-      app:layout_constraintTop_toBottomOf="@+id/buttonBLE" />
 </androidx.constraintlayout.widget.ConstraintLayout>

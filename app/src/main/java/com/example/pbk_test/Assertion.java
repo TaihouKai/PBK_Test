@@ -42,8 +42,6 @@ public class Assertion {
         this.signature = signature;
         this.g = ((BLS01KeyParameters)cipherNym).getParameters().getG().toBytes();
         this.gPowR = gPowR;
-        // initiate gPowR
-        // ...
         this.isSaved = false;
     }
 
