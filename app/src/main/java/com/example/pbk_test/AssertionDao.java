@@ -1,25 +1,22 @@
 package com.example.pbk_test;
 
 import androidx.room.Dao;
-import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
-
-import org.bouncycastle.crypto.CipherParameters;
 
 import java.util.List;
 
 @Dao
 public interface AssertionDao {
 
-    @Query("SELECT * FROM assertion")
+    @Query("SELECT * FROM assertions")
     List<Assertion> getAll();
 
-    /*
-    @Query("SELECT * FROM assertion WHERE nym IN (:nyms)")
-    List<Assertion> findAllByNyms(byte[][] nyms);
+    @Query("SELECT * FROM assertions WHERE assertionId IN (:ids)")
+    List<Assertion> findAllByIDs(List<Integer> ids);
 
+    /*
     @Query("SELECT * FROM assertion WHERE nym = :thisNym LIMIT 1")
     Assertion findByNym(byte[] thisNym);
      */
@@ -27,6 +24,12 @@ public interface AssertionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(Assertion Assertion);
 
-    @Query("DELETE FROM assertion")
+    @Query("DELETE FROM assertions")
     void delete();
+
+    @Query("UPDATE assertions SET pseudonym=:newNym WHERE assertionId=:id")
+    void updateNym(byte[] newNym, int id);
+
+    @Query("UPDATE assertions SET isSaved=:isSaved WHERE assertionId=:id")
+    void updateIsSaved(boolean isSaved, int id);
 }

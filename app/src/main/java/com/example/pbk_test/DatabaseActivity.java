@@ -6,12 +6,15 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class DatabaseActivity extends AppCompatActivity {
 
@@ -29,7 +32,9 @@ public class DatabaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_database);
 
-        user = new User(getApplicationContext());
+        try {
+            user = new User(getApplicationContext());
+        } catch (IOException e) {}
         timeTotal = 0;
 
         initializeTable();
@@ -41,12 +46,13 @@ public class DatabaseActivity extends AppCompatActivity {
      * @param view          Required by Android Studio
      * @throws IOException  Error when a.properties is not found
      */
-    public void generateKey(View view) throws IOException {
+    public void generateKey(View view) {
         long startTime = System.currentTimeMillis();
         user.keyGen();
         long timeTakenNum = System.currentTimeMillis() - startTime;
         String timeTaken = "Time taken - keyGen: " + timeTakenNum + "ms";
 
+        timeTotal = 0;
         timeTotal += timeTakenNum;
         display(timeTaken);
         displayTotal(String.valueOf(timeTotal));
@@ -80,19 +86,21 @@ public class DatabaseActivity extends AppCompatActivity {
                 () -> {
                     long startTime = System.currentTimeMillis();
                     Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, true);
-                    appendTable(findViewById(R.id.tableLayout), assertion.msg);
                     long timeTakenNum = System.currentTimeMillis() - startTime;
                     String timeTaken = "Time taken - meetGen: " + timeTakenNum + "ms";
 
+                    appendTable(findViewById(R.id.tableLayout), assertion.msg);
                     timeTotal += timeTakenNum;
                     display(timeTaken);
                     displayTotal(String.valueOf(timeTotal));
                 }
         );
+        exec.getBackground().shutdown();
     }
 
     /**
      * (Without concurrency) Meet a person -- verify assertion received.
+     * Deprecated. Only for reference.
      * @param view          Required by Android Studio
      * @throws IOException  Error when a.properties is not found
      */
@@ -114,7 +122,7 @@ public class DatabaseActivity extends AppCompatActivity {
     }
 
     /**
-     * (With concurrency) Meet a person -- verify assertion received.
+     * (With concurrency) Meet a person -- verify assertion received. Save to database if yes.
      * @param view          Required by Android Studio
      * @throws IOException  Error when a.properties is not found
      */
@@ -130,20 +138,131 @@ public class DatabaseActivity extends AppCompatActivity {
 
                         long startTime = System.currentTimeMillis();
                         boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
+                        if (res)
+                            user.db.assertionDao().insert(assertion_alter);
                         long timeTakenNum = System.currentTimeMillis() - startTime;
                         String timeTaken = "Time taken - meetVer: " + timeTakenNum + "ms";
 
                         timeTotal += timeTakenNum;
                         display(timeTaken);
                         displayTotal(String.valueOf(timeTotal));
-
-                        if (res)
+                        if (res) {
                             Log.d("PBK_Test - Verification", "Success");
+                            appendTable(findViewById(R.id.tableLayout), assertion_alter.msg);
+                        }
                         else
                             Log.d("PBK_Test - Verification", "Fail");
                     } catch (Exception e) {}
                 }
         );
+        exec.getBackground().shutdown();
+    }
+
+    public void saveConcur(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    try {
+                        long startTime = System.currentTimeMillis();
+                        user.save();
+                        long timeTakenNum = System.currentTimeMillis() - startTime;
+                        String timeTaken = "Time taken - save: " + timeTakenNum + "ms";
+
+                        timeTotal = timeTakenNum;
+                        display(timeTaken);
+                        displayTotal(String.valueOf(timeTotal));
+                    } catch (IOException e) {}
+                }
+        );
+    }
+
+    public void showConcur(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        exec.getBackground().execute(
+                () -> {
+                    // Get all CompressedAssertion's
+                    List<CompressedAssertion> compressedList = user.db.compressedAssertionDao().getAll();
+                    // Record list to be sent to doctor
+                    List<Record> recordList = new ArrayList<>();
+                    // For every CompressedAssertion...
+                    for (CompressedAssertion ca: compressedList) {
+                        // Get all Assertions linked with this CompressedAssertion
+                        List<Assertion> assertionList = user.db.assertionDao().findAllByIDs(ca.ids);
+                        // Record associated with this CompressedAssertion
+                        Record r = new Record(ca.signature, user.pkrbls, user.parameters, user.r);
+                        // For every Assertion in the list
+                        for (Assertion assertion: assertionList) {
+                            try {
+                                // Update PK and add to record
+                                r.nyms.add(user.pkrbls.updatePK(MainActivity.getCipherFromBytes(assertion.nym, assertion.g, getApplicationContext()), user.parameters, user.pkrbls.sampleEleZr(user.parameters)));
+                                // Add msg to record
+                                r.msgs.add(assertion.msg);
+                                // Add g^r to record
+                                r.gPowRs.add(assertion.gPowR);
+                            } catch (IOException e) {}
+                        }
+                        // Add this record to record list
+                        recordList.add(r);
+                    }
+                    // Send recordList to doctor ...
+                }
+        );
+    }
+
+    public void discreteMode(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        try {
+            long startTime = System.currentTimeMillis();
+            for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
+                exec.getBackground().execute(
+                        () -> user.generateAssertion(ATTR_EXAMPLE, true)
+                );
+            }
+            exec.getBackground().shutdown();
+            exec.getBackground().awaitTermination(1, TimeUnit.HOURS);
+
+            long timeTakenNum = System.currentTimeMillis() - startTime;
+            String timeTaken = "Time taken - discreteMode: " + timeTakenNum + "ms";
+
+            timeTotal = timeTakenNum;
+            display(timeTaken);
+            displayTotal(String.valueOf(timeTotal));
+        } catch (Exception e) {
+            // When fieldTimes is not properly filled
+        }
+    }
+
+    public void bleMode(View view) {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        try {
+            long startTime = System.currentTimeMillis();
+            User user_alter = new User(getApplicationContext());
+            user_alter.keyGen();
+            Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
+            for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
+                exec.getBackground().execute(
+                        () -> {
+                            try {
+                                user.generateAssertion(ATTR_EXAMPLE, true);
+                                boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
+                                if (res)
+                                    user.db.assertionDao().insert(assertion_alter);
+                            } catch (Exception e) {}
+                        }
+                );
+            }
+            exec.getBackground().shutdown();
+            exec.getBackground().awaitTermination(1, TimeUnit.HOURS);
+
+            long timeTakenNum = System.currentTimeMillis() - startTime;
+            String timeTaken = "Time taken - bleMode: " + timeTakenNum + "ms";
+
+            timeTotal = timeTakenNum;
+            display(timeTaken);
+            displayTotal(String.valueOf(timeTotal));
+        } catch (Exception e) {
+            // When fieldTimes is not properly filled
+        }
     }
 
     /**
@@ -171,6 +290,7 @@ public class DatabaseActivity extends AppCompatActivity {
                     timeTotal = 0;
                 }
         );
+        exec.getBackground().shutdown();
     }
 
     /**
@@ -187,6 +307,7 @@ public class DatabaseActivity extends AppCompatActivity {
                     }
                 }
         );
+        exec.getBackground().shutdown();
     }
 
     /**
@@ -215,7 +336,7 @@ public class DatabaseActivity extends AppCompatActivity {
      * @param tl Table to be cleared
      */
     public void clearTable(TableLayout tl) {
-        runOnUiThread(() -> tl.removeAllViews());
+        runOnUiThread(tl::removeAllViews);
     }
 
     /**

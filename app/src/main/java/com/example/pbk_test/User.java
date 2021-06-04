@@ -14,19 +14,16 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.jpbc.Element;
-import it.unisa.dia.gas.jpbc.Field;
-import it.unisa.dia.gas.jpbc.Pairing;
-import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 public class User {
 
-    public PKRBLS pkrbls;
-    private BLS01Parameters parameters;
+    public final PKRBLS pkrbls;
     public AsymmetricCipherKeyPair keyPair;
     public CipherParameters nym;
-    private Element r;
     public Database db;
-    public CompressedDatabase cdb;
+
+    protected Element r;
+    protected BLS01Parameters parameters;
 
     /**
      * Construct a new user.
@@ -43,14 +40,13 @@ public class User {
         this.pkrbls = new PKRBLS(context);
         this.parameters = this.pkrbls.setup();
         db = Room.databaseBuilder(context, Database.class, "database-main").build();
-        cdb = Room.databaseBuilder(context, CompressedDatabase.class, "database-compressed").build();
     }
 
     /**
      * Generate initialKey pair.
      * @throws IOException Error when a.properties is not found
      */
-    public void keyGen() throws IOException {
+    public void keyGen() {
         this.keyPair = pkrbls.keyGen(this.parameters);
         this.nym = this.keyPair.getPublic();
         this.r = pkrbls.getEleZr(1, this.parameters);
@@ -62,7 +58,7 @@ public class User {
      * @param insert    Whether to insert this assertion into db
      * @return          Assertion
      */
-    public Assertion generateAssertion(String attr, boolean insert) throws IOException {
+    public Assertion generateAssertion(String attr, boolean insert) {
         String msg = User.generateMsg(attr);
         Assertion assertion = new Assertion(this.nym, msg, this.pkrbls.sign(msg, this.keyPair.getPrivate(), this.r));
         if (insert)
@@ -88,26 +84,15 @@ public class User {
         List<byte[]> signatures = new ArrayList<>();
         List<Integer> ids = new ArrayList<>();
         for (Assertion assertion: assertions) {
-            signatures.add(assertion.signature);
-            ids.add(assertion.id);
+            if (assertion.isSaved = false) {
+                signatures.add(assertion.signature);
+                ids.add(assertion.id);
+                this.db.assertionDao().updateIsSaved(true, assertion.id);
+            }
         }
         byte[] compressedSig = this.pkrbls.aggregate(signatures, pkrbls.setup());
-        cdb.compressedAssertionDao().insert(new CompressedAssertion(compressedSig, ids));
+        db.compressedAssertionDao().insert(new CompressedAssertion(compressedSig, ids));
         this.db.assertionDao().delete();
-    }
-
-    /**
-     * WIP
-     * @param signature
-     * @param db
-     * @return
-     */
-    public Assertion show(byte[] signature, Database db) throws IOException {
-        // WIP
-
-        // this.updateAssertions();
-        // delete all assertions in DB
-        return generateAssertion("", false);
     }
 
     /**
@@ -117,15 +102,6 @@ public class User {
     public void updateNym() {
         this.r = this.pkrbls.sampleEleZr(this.parameters);
         this.nym = this.pkrbls.updatePK(this.nym, this.parameters, r);
-    }
-
-    /**
-     * Update assertions.
-     * WIP
-     */
-    public void updateAssertions() {
-        // WIP
-        // Update assertions in DB
     }
 
     /**

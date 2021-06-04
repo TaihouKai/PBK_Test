@@ -25,7 +25,7 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 public class PKRBLS {
 
-    private Context context;
+    private final Context context;
 
     /**
      * Construct a PKR-BLS scheme instance.
@@ -74,7 +74,7 @@ public class PKRBLS {
      * @param privateKeyParam CipherParameters type of Secret key, converted and used for signing message.
      * @param r               randomness used in pk.
      */
-    public byte[] sign(String message, CipherParameters privateKeyParam, Element r) throws IOException {
+    public byte[] sign(String message, CipherParameters privateKeyParam, Element r) {
         // get pairing from private key
         BLS01PrivateKeyParameters privateKey = (BLS01PrivateKeyParameters) ((BLS01KeyParameters) privateKeyParam);
         Pairing pairing = PairingFactory.getPairing(privateKey.getParameters().getParameters());

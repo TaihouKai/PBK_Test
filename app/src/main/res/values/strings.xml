@@ -9,7 +9,15 @@
     <string name="buttonClear_name">Clear</string>
     <string name="buttonDB_name">Enter DB</string>
     <string name="buttonDeleteAll_name">Delete All</string>
+    <string name="buttonDiscrete_name">Disct M</string>
+    <string name="buttonBLE_name">BLE M</string>
+    <string name="buttonRandom_name">Random</string>
+
+    <string name="buttonSave_name">Save</string>
+    <string name="buttonShow_name">Show</string>
 
     <string name="display_name">Anticipated time</string>
     <string name="displayTotal_name">Total time</string>
+
+    <string name="fieldTimes_hint">Times?</string>
 </resources>

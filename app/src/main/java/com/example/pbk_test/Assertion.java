@@ -8,13 +8,12 @@ import androidx.room.PrimaryKey;
 import org.bouncycastle.crypto.CipherParameters;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyParameters;
-import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 
-@Entity
+@Entity(tableName = "assertions")
 public class Assertion {
 
     @PrimaryKey(autoGenerate = true)
-    @NonNull
+    @ColumnInfo(name = "assertionId")
     public int id;
 
     @ColumnInfo(name = "pseudonym")
@@ -29,11 +28,20 @@ public class Assertion {
     @ColumnInfo(name = "gValue")
     public byte[] g;
 
+    @ColumnInfo(name = "gPowR")
+    public byte[] gPowR;
+
+    @ColumnInfo(name = "isSaved")
+    public boolean isSaved;
+
     public Assertion(CipherParameters cipherNym, String msg, byte[] signature) {
         this.nym = MainActivity.getBytesFromCipher(cipherNym);
         this.msg = msg;
         this.signature = signature;
         this.g = ((BLS01KeyParameters)cipherNym).getParameters().getG().toBytes();
+        // initiate gPowR
+        // ...
+        this.isSaved = false;
     }
 
     public Assertion() {}

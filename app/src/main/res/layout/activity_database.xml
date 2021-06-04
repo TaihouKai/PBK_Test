@@ -58,8 +58,8 @@
       android:id="@+id/buttonMeetGen"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginStart="14dp"
-      android:layout_marginTop="14dp"
+      android:layout_marginStart="48dp"
+      android:layout_marginTop="12dp"
       android:onClick="meetGenConCur"
       android:text="@string/buttonMeetGen_name"
       app:layout_constraintStart_toEndOf="@+id/buttonKeyGen"
@@ -77,8 +77,8 @@
       android:id="@+id/buttonMeetVer"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginStart="14dp"
-      android:layout_marginTop="14dp"
+      android:layout_marginStart="48dp"
+      android:layout_marginTop="12dp"
       android:onClick="meetVerConcur"
       android:text="@string/buttonMeetVer_name"
       app:layout_constraintStart_toEndOf="@+id/buttonMeetGen"
@@ -95,4 +95,69 @@
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintHorizontal_bias="0.0"
       app:layout_constraintStart_toStartOf="parent" />
+
+  <EditText
+      android:id="@+id/fieldTimes"
+      android:layout_width="66dp"
+      android:layout_height="39dp"
+      android:layout_marginStart="8dp"
+      android:ems="10"
+      android:hint="@string/fieldTimes_hint"
+      android:importantForAutofill="no"
+      android:inputType="number"
+      app:layout_constraintBottom_toBottomOf="@+id/buttonRandom"
+      app:layout_constraintStart_toEndOf="@+id/buttonRandom"
+      app:layout_constraintTop_toTopOf="@+id/buttonRandom" />
+
+  <Button
+      android:id="@+id/buttonDiscrete"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="14dp"
+      android:layout_marginTop="14dp"
+      android:onClick="discreteMode"
+      android:text="@string/buttonDiscrete_name"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/buttonKeyGen" />
+
+  <Button
+      android:id="@+id/buttonBLE"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="12dp"
+      android:onClick="bleMode"
+      android:text="@string/buttonBLE_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonDiscrete"
+      app:layout_constraintTop_toTopOf="@+id/buttonDiscrete" />
+
+  <Button
+      android:id="@+id/buttonRandom"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:text="@string/buttonRandom_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonBLE"
+      app:layout_constraintTop_toTopOf="@+id/buttonBLE" />
+
+  <Button
+      android:id="@+id/buttonSave"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="14dp"
+      android:layout_marginTop="14dp"
+      android:onClick="saveConcur"
+      android:text="@string/buttonSave_name"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/buttonDiscrete" />
+
+  <Button
+      android:id="@+id/buttonShow"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="12dp"
+      android:layout_marginTop="14dp"
+      android:onClick="showConcur"
+      android:text="@string/buttonShow_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonSave"
+      app:layout_constraintTop_toBottomOf="@+id/buttonBLE" />
 </androidx.constraintlayout.widget.ConstraintLayout>
