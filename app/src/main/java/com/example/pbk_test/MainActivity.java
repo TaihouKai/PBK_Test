@@ -48,7 +48,8 @@ public class MainActivity extends AppCompatActivity {
         // First KeyGen takes more time
         long startTime1 = System.currentTimeMillis();
         PKRBLS pkrbls = new PKRBLS(this);
-        AsymmetricCipherKeyPair keyPair = pkrbls.keyGen(pkrbls.setup()); // Setup
+        BLS01Parameters parameters = pkrbls.setup();
+        AsymmetricCipherKeyPair keyPair = pkrbls.keyGen(parameters); // Setup
         String timeTaken1 = "Time taken - KeyGen: " + (System.currentTimeMillis() -startTime1) + "ms";
 
         if (isFirstTime)
@@ -56,8 +57,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             long startTime2 = System.currentTimeMillis();
             String message = "Hello, world!";
-            Element r = null;
-            r.set(1);
+            Element r = pkrbls.setEleZr(1, parameters);
             pkrbls.verify(pkrbls.sign(message, keyPair.getPrivate(), r), message, keyPair.getPublic());
             String timeTaken2 = "Time taken - Verify: " + (System.currentTimeMillis() - startTime2) + "ms";
             display(timeTaken1 + "\n" + timeTaken2);

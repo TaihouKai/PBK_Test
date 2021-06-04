@@ -1,5 +1,7 @@
 package com.example.pbk_test;
 
+import android.sax.Element;
+
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -34,11 +36,12 @@ public class Assertion {
     @ColumnInfo(name = "isSaved")
     public boolean isSaved;
 
-    public Assertion(CipherParameters cipherNym, String msg, byte[] signature) {
+    public Assertion(CipherParameters cipherNym, String msg, byte[] signature, byte[] gPowR) {
         this.nym = MainActivity.getBytesFromCipher(cipherNym);
         this.msg = msg;
         this.signature = signature;
         this.g = ((BLS01KeyParameters)cipherNym).getParameters().getG().toBytes();
+        this.gPowR = gPowR;
         // initiate gPowR
         // ...
         this.isSaved = false;

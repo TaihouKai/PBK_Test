@@ -12,8 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 public class User {
 
@@ -49,7 +52,7 @@ public class User {
     public void keyGen() {
         this.keyPair = pkrbls.keyGen(this.parameters);
         this.nym = this.keyPair.getPublic();
-        this.r = pkrbls.getEleZr(1, this.parameters);
+        this.r = pkrbls.setEleZr(1, this.parameters);
     }
 
     /**
@@ -60,7 +63,7 @@ public class User {
      */
     public Assertion generateAssertion(String attr, boolean insert) {
         String msg = User.generateMsg(attr);
-        Assertion assertion = new Assertion(this.nym, msg, this.pkrbls.sign(msg, this.keyPair.getPrivate(), this.r));
+        Assertion assertion = new Assertion(this.nym, msg, this.pkrbls.sign(msg, this.keyPair.getPrivate(), this.r), this.parameters.getG().powZn(this.r).toBytes());
         if (insert)
             db.assertionDao().insert(assertion);
         return assertion;
@@ -100,7 +103,7 @@ public class User {
      * WIP
      */
     public void updateNym() {
-        this.r = this.pkrbls.sampleEleZr(this.parameters);
+        this.r = this.r.mul(this.pkrbls.sampleEleZr(this.parameters));
         this.nym = this.pkrbls.updatePK(this.nym, this.parameters, r);
     }
 

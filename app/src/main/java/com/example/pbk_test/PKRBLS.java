@@ -191,7 +191,7 @@ public class PKRBLS {
 
         // handle each message, compute hash and multiplied pairing
         for (int i=0; i<messages.size(); i++) {
-            // compute hash of the each message
+            // compute hash of each message
             byte[] bytes = messages.get(i).getBytes();
             Digest digest = new SHA256Digest();
             digest.reset();
@@ -211,7 +211,7 @@ public class PKRBLS {
      * @param i             A given integer.
      * @param parameters    public parameter of PKRBLS scheme.
      */
-    public Element getEleZr(int i, BLS01Parameters parameters) {
+    public Element setEleZr(int i, BLS01Parameters parameters) {
         Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
 
         Element e = pairing.getZr().newElement(i);
