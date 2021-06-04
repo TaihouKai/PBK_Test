@@ -165,16 +165,17 @@ public class DatabaseActivity extends AppCompatActivity {
         ApplicationExecutors exec = new ApplicationExecutors();
         exec.getBackground().execute(
                 () -> {
-                    try {
-                        long startTime = System.currentTimeMillis();
-                        user.save();
-                        long timeTakenNum = System.currentTimeMillis() - startTime;
-                        String timeTaken = "Time taken - save: " + timeTakenNum + "ms";
+                    long startTime = System.currentTimeMillis();
+                    user.save();
+                    long timeTakenNum = System.currentTimeMillis() - startTime;
+                    String timeTaken = "Time taken - save: " + timeTakenNum + "ms";
 
-                        timeTotal = timeTakenNum;
-                        display(timeTaken);
-                        displayTotal(String.valueOf(timeTotal));
-                    } catch (IOException e) {}
+                    clearTable(findViewById(R.id.tableLayoutCompressed));
+                    initializeTableCompressed();
+
+                    timeTotal = timeTakenNum;
+                    display(timeTaken);
+                    displayTotal(String.valueOf(timeTotal));
                 }
         );
     }
@@ -321,7 +322,9 @@ public class DatabaseActivity extends AppCompatActivity {
         exec.getBackground().execute(
                 () -> {
                     user.db.assertionDao().delete();
+                    user.db.compressedAssertionDao().delete();
                     clearTable(findViewById(R.id.tableLayout));
+                    clearTable(findViewById(R.id.tableLayoutCompressed));
                     timeTotal = 0;
                 }
         );
@@ -352,7 +355,7 @@ public class DatabaseActivity extends AppCompatActivity {
                     TableLayout tl = findViewById(R.id.tableLayoutCompressed);
                     List<CompressedAssertion> list = user.db.compressedAssertionDao().getAll();
                     for (int i = 0; i < list.size(); i++) {
-                        appendTable(tl, new String(list.get(i).signature));
+                        appendTable(tl, list.get(i).ids.size() + "|" + list.get(i).ids.toString());
                     }
                 }
         );

@@ -30,6 +30,6 @@ public interface AssertionDao {
     @Query("UPDATE assertions SET pseudonym=:newNym WHERE assertionId=:id")
     void updateNym(byte[] newNym, int id);
 
-    @Query("UPDATE assertions SET isSaved=:isSaved WHERE assertionId=:id")
-    void updateIsSaved(boolean isSaved, int id);
+    @Query("UPDATE assertions SET isSaved=:saved WHERE assertionId=:id")
+    void updateIsSaved(boolean saved, int id);
 }

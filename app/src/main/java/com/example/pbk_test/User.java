@@ -1,6 +1,7 @@
 package com.example.pbk_test;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.room.Room;
 
@@ -80,22 +81,21 @@ public class User {
 
     /**
      * Compress all signatures
-     * @return Compressed signatures
      */
-    public void save() throws IOException {
+    public void save() {
         List<Assertion> assertions = this.db.assertionDao().getAll();
         List<byte[]> signatures = new ArrayList<>();
         List<Integer> ids = new ArrayList<>();
         for (Assertion assertion: assertions) {
-            if (assertion.isSaved = false) {
+            if (!assertion.isSaved) {
                 signatures.add(assertion.signature);
                 ids.add(assertion.id);
                 this.db.assertionDao().updateIsSaved(true, assertion.id);
+                Log.d("PBK_Test - save", String.valueOf(assertion.id));
             }
         }
-        byte[] compressedSig = this.pkrbls.aggregate(signatures, pkrbls.setup());
+        byte[] compressedSig = this.pkrbls.aggregate(signatures, this.parameters);
         db.compressedAssertionDao().insert(new CompressedAssertion(compressedSig, ids));
-        this.db.assertionDao().delete();
     }
 
     /**
