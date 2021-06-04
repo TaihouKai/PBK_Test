@@ -7,26 +7,20 @@ import androidx.annotation.RequiresApi;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.Digest;
 
 import java.io.IOException;
 import java.util.List;
 
-import it.unisa.dia.gas.crypto.jpbc.signature.bls01.engines.BLS01Signer;
-import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01KeyPairGenerator;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01ParametersGenerator;
-import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyGenerationParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PrivateKeyParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Pairing;
-import it.unisa.dia.gas.jpbc.Field;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
-import org.bouncycastle.crypto.CipherParameters;
 
 
 public class PKRBLS {
@@ -81,23 +75,21 @@ public class PKRBLS {
      * @param r               randomness used in pk.
      */
     public byte[] sign(String message, CipherParameters privateKeyParam, Element r) throws IOException {
-        byte[] bytes = message.getBytes();
-
         // get pairing from private key
         BLS01PrivateKeyParameters privateKey = (BLS01PrivateKeyParameters) ((BLS01KeyParameters) privateKeyParam);
         Pairing pairing = PairingFactory.getPairing(privateKey.getParameters().getParameters());
 
         // compute hash of the message
+        byte[] bytes = message.getBytes();
         Digest digest = new SHA256Digest();
+        digest.reset();
         digest.update(bytes, 0, bytes.length);
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
         Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
 
-        Element sig_temp = h.powZn(privateKey.getSk());
-        Element sig = sig_temp.powZn(privateKey.getSk().mul(r));
+        Element sig = h.powZn(privateKey.getSk().mul(r));
 
-        digest.reset();
         return sig.toBytes();
     }
 
@@ -108,14 +100,14 @@ public class PKRBLS {
      * @param publicKeyParam CipherParameters type of Public key, converted and used for verifying message-signature pair.
      */
     public boolean verify(byte[] signature, String message, CipherParameters publicKeyParam) {
-        byte[] bytes = message.getBytes();
-
         // get pairing from public key
         BLS01PublicKeyParameters publicKey = (BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKeyParam);
         Pairing pairing = PairingFactory.getPairing(publicKey.getParameters().getParameters());
 
         // compute hash of the message
+        byte[] bytes = message.getBytes();
         Digest digest = new SHA256Digest();
+        digest.reset();
         digest.update(bytes, 0, bytes.length);
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
@@ -162,7 +154,6 @@ public class PKRBLS {
 
     /**
      * Aggregate multiple signatures from PKR-BLS scheme.
-     *
      * @param signatures A list of signatures to be aggregated by group multiplication.
      * @param parameters public parameter of PKRBLS scheme.
      */
@@ -178,7 +169,6 @@ public class PKRBLS {
         }
         return aggregate.toBytes();
     }
-
 
     /**
      * Verify aggregate signatures in PKR-BLS scheme.
@@ -201,15 +191,15 @@ public class PKRBLS {
 
         // handle each message, compute hash and multiplied pairing
         for (int i=0; i<messages.size(); i++) {
+            // compute hash of the each message
             byte[] bytes = messages.get(i).getBytes();
-            // compute hash of the message
             Digest digest = new SHA256Digest();
+            digest.reset();
             digest.update(bytes, 0, bytes.length);
             byte[] hash = new byte[digest.getDigestSize()];
             digest.doFinal(hash, 0);
             Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
             temp2 = temp2.mul(pairing.pairing(h, ((BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKeysParam.get(i))).getPk()));
-            digest.reset();
         }
 
         return temp1.isEqual(temp2);
