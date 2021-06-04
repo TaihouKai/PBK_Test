@@ -1,0 +1,52 @@
+Index: app/src/main/java/com/example/pbk_test/User.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.pbk_test;\n\nimport android.content.Context;\n\nimport org.bouncycastle.crypto.AsymmetricCipherKeyPair;\nimport org.bouncycastle.crypto.CipherParameters;\n\nimport java.io.IOException;\nimport java.util.List;\nimport java.util.concurrent.ThreadLocalRandom;\n\nimport it.unisa.dia.gas.jpbc.Element;\nimport it.unisa.dia.gas.jpbc.Field;\nimport it.unisa.dia.gas.jpbc.Pairing;\nimport it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;\n\npublic class User {\n\n    public CipherParameters nym;\n    public BLS01 bls01;\n    public AsymmetricCipherKeyPair keyPair;\n\n    /**\n     * Construct a new user.\n     * @param context Current application context\n     */\n    public User(Context context) {\n        this.bls01 = new BLS01(context);\n    }\n\n    /**\n     * Generate Key pair.\n     * @throws IOException Error when a.properties is not found\n     */\n    public void keyGen() throws IOException {\n        this.keyPair = bls01.keyGen(bls01.setup());\n        this.nym = this.keyPair.getPublic();\n    }\n\n    /**\n     * Generate an Assertion and insert to database.\n     * @param attr  Attributes\n     * @return      Assertion\n     */\n    public Assertion generateAssertion(String attr, Database db) {\n        Assertion assertion = new Assertion(this.nym, User.generateMsg(attr), this.bls01.sign(attr, this.keyPair.getPrivate()));\n        db.assertionDao().insert(assertion);\n        return assertion;\n    }\n\n    /**\n     * Generate an assertion WITHOUT inserting to database.\n     * @param attr  Attributes\n     * @return      Assertion\n     */\n    public Assertion generateAssertion(String attr) {\n        return new Assertion(this.nym, User.generateMsg(attr), this.bls01.sign(attr, this.keyPair.getPrivate()));\n    }\n\n    /**\n     * Verify an assertion using public key contained.\n     * @param assertion Assertion containing signature to be verified\n     * @return          Verification result\n     */\n    public boolean verifyAssertion(Assertion assertion, Context context) throws IOException {\n        return this.bls01.verify(assertion.signature, assertion.msg, MainActivity.getCipherFromBytes(assertion.nym, assertion.g, context));\n    }\n\n    /**\n     * WIP\n     * @param signatures    Signatures received\n     * @return              Compressed signatures\n     */\n    public byte[] save(List<byte[]> signatures, Context context) throws IOException {\n\n\n        return new byte[0];\n    }\n\n    /**\n     * WIP\n     * @param signature\n     * @param db\n     * @return\n     */\n    public Assertion show(byte[] signature, Database db) {\n        // WIP\n\n        // this.updateAssertions();\n        // delete all assertions in DB\n        return generateAssertion(\"\", db);\n    }\n\n    /**\n     * Update pseudonym.\n     * WIP\n     */\n    public void updateNym() {\n        // this.nym = this.nym.update();\n    }\n\n    /**\n     * Update assertions.\n     * WIP\n     */\n    public void updateAssertions() {\n        // WIP\n        // Update assertions in DB\n    }\n\n    /**\n     * Generate message by adding randomness to attributes\n     * @param attr  Attributes\n     * @return      Message\n     */\n    public static String generateMsg(String attr) {\n        return attr + \"|\" + ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/pbk_test/User.java	(revision e417caf8c04d00b9641419a66aece923048eff13)
++++ app/src/main/java/com/example/pbk_test/User.java	(date 1622261337909)
+@@ -54,7 +54,7 @@
+      * @return      Assertion
+      */
+     public Assertion generateAssertion(String attr) {
+-        return new Assertion(this.nym, User.generateMsg(attr), this.bls01.sign(attr, this.keyPair.getPrivate()));
++        return new Assertion(this.nym, User.generateMsg(attr), this.bls01.sign(User.generateMsg(attr), this.keyPair.getPrivate()));
+     }
+ 
+     /**
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>apply plugin: 'com.android.application'\n\nandroid {\n    compileSdkVersion 29\n    buildToolsVersion \"29.0.3\"\n\n    defaultConfig {\n        applicationId \"com.example.pbk_test\"\n        minSdkVersion 29\n        targetSdkVersion 29\n        versionCode 1\n        versionName \"1.0\"\n\n        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\n    }\n\n    buildTypes {\n        release {\n            minifyEnabled false\n            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\n        }\n    }\n    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_1_8\n        targetCompatibility JavaVersion.VERSION_1_8\n    }\n\n}\n\ndependencies {\n    implementation fileTree(include: ['*.jar'], dir: 'libs')\n    implementation 'androidx.appcompat:appcompat:1.2.0'\n    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'\n    implementation 'com.google.android.material:material:1.2.1'\n    testImplementation 'junit:junit:4.12'\n    androidTestImplementation 'androidx.test.ext:junit:1.1.2'\n    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'\n    implementation files('libs/bcprov-jdk16-1.46.jar')\n    implementation files('libs/jna-3.2.5.jar')\n    implementation files('libs/jpbc-api-2.0.0.jar')\n    implementation files('libs/jpbc-benchmark-2.0.0.jar')\n    implementation files('libs/jpbc-crypto-2.0.0.jar')\n    implementation files('libs/jpbc-mm-2.0.0.jar')\n    implementation files('libs/jpbc-pbc-2.0.0.jar')\n    implementation files('libs/jpbc-plaf-2.0.0.jar')\n    implementation 'com.google.code.gson:gson:2.8.7'\n\n    def room_version = \"2.3.0\"\n\n    implementation \"androidx.room:room-runtime:$room_version\"\n    annotationProcessor \"androidx.room:room-compiler:$room_version\"\n    // optional - RxJava2 support for Room\n    implementation \"androidx.room:room-rxjava2:$room_version\"\n    // optional - RxJava3 support for Room\n    implementation \"androidx.room:room-rxjava3:$room_version\"\n    // optional - Guava support for Room, including Optional and ListenableFuture\n    implementation \"androidx.room:room-guava:$room_version\"\n    // optional - Test helpers\n    testImplementation \"androidx.room:room-testing:$room_version\"\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(revision e417caf8c04d00b9641419a66aece923048eff13)
++++ app/build.gradle	(date 1622260923807)
+@@ -32,6 +32,7 @@
+     implementation 'androidx.appcompat:appcompat:1.2.0'
+     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+     implementation 'com.google.android.material:material:1.2.1'
++    implementation 'org.jetbrains:annotations-java5:15.0'
+     testImplementation 'junit:junit:4.12'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"ProjectRootManager\" version=\"2\" languageLevel=\"JDK_11\" default=\"true\" project-jdk-name=\"1.8\" project-jdk-type=\"JavaSDK\">\n    <output url=\"file://$PROJECT_DIR$/build/classes\" />\n  </component>\n  <component name=\"ProjectType\">\n    <option name=\"id\" value=\"Android\" />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/misc.xml	(revision e417caf8c04d00b9641419a66aece923048eff13)
++++ .idea/misc.xml	(date 1622260923811)
+@@ -1,6 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
++  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="false" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+     <output url="file://$PROJECT_DIR$/build/classes" />
+   </component>
+   <component name="ProjectType">

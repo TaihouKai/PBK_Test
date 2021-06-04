@@ -1,9 +1,7 @@
 package com.example.pbk_test;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.room.Room;
 
-import android.app.Application;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;

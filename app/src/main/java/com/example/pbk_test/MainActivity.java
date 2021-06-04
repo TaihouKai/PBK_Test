@@ -49,8 +49,8 @@ public class MainActivity extends AppCompatActivity {
     public void initiateTest(View view) throws IOException {
         // First KeyGen takes more time
         long startTime1 = System.currentTimeMillis();
-        BLS01 bls01 = new BLS01(this);
-        AsymmetricCipherKeyPair keyPair = bls01.keyGen(bls01.setup()); // Setup
+        PKRBLS pkrbls = new PKRBLS(this);
+        AsymmetricCipherKeyPair keyPair = pkrbls.keyGen(pkrbls.setup()); // Setup
         String timeTaken1 = "Time taken - KeyGen: " + (System.currentTimeMillis() -startTime1) + "ms";
 
         if (isFirstTime)
@@ -58,7 +58,9 @@ public class MainActivity extends AppCompatActivity {
         else {
             long startTime2 = System.currentTimeMillis();
             String message = "Hello, world!";
-            bls01.verify(bls01.sign(message, keyPair.getPrivate()), message, keyPair.getPublic());
+            Element r = null;
+            r.set(1);
+            pkrbls.verify(pkrbls.sign(message, keyPair.getPrivate(), r), message, keyPair.getPublic());
             String timeTaken2 = "Time taken - Verify: " + (System.currentTimeMillis() - startTime2) + "ms";
             display(timeTaken1 + "\n" + timeTaken2);
         }

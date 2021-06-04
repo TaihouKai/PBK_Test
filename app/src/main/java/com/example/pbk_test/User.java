@@ -8,11 +8,11 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Field;
 import it.unisa.dia.gas.jpbc.Pairing;
@@ -20,9 +20,11 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 public class User {
 
-    public CipherParameters nym;
-    public BLS01 bls01;
+    public PKRBLS pkrbls;
+    private BLS01Parameters parameters;
     public AsymmetricCipherKeyPair keyPair;
+    public CipherParameters nym;
+    private Element r;
     public Database db;
     public CompressedDatabase cdb;
 
@@ -35,20 +37,23 @@ public class User {
      * This is simply because we are here only to prove its performance, instead of developing a
      * REAL application.
      * @param context Current application context
+     * @throws IOException Error when a.properties is not found
      */
-    public User(Context context) {
-        this.bls01 = new BLS01(context);
+    public User(Context context) throws IOException {
+        this.pkrbls = new PKRBLS(context);
+        this.parameters = this.pkrbls.setup();
         db = Room.databaseBuilder(context, Database.class, "database-main").build();
         cdb = Room.databaseBuilder(context, CompressedDatabase.class, "database-compressed").build();
     }
 
     /**
-     * Generate Key pair.
+     * Generate initialKey pair.
      * @throws IOException Error when a.properties is not found
      */
     public void keyGen() throws IOException {
-        this.keyPair = bls01.keyGen(bls01.setup());
+        this.keyPair = pkrbls.keyGen(this.parameters);
         this.nym = this.keyPair.getPublic();
+        this.r = pkrbls.getEleZr(1, this.parameters);
     }
 
     /**
@@ -57,9 +62,9 @@ public class User {
      * @param insert    Whether to insert this assertion into db
      * @return          Assertion
      */
-    public Assertion generateAssertion(String attr, boolean insert) {
+    public Assertion generateAssertion(String attr, boolean insert) throws IOException {
         String msg = User.generateMsg(attr);
-        Assertion assertion = new Assertion(this.nym, msg, this.bls01.sign(msg, this.keyPair.getPrivate()));
+        Assertion assertion = new Assertion(this.nym, msg, this.pkrbls.sign(msg, this.keyPair.getPrivate(), this.r));
         if (insert)
             db.assertionDao().insert(assertion);
         return assertion;
@@ -71,7 +76,7 @@ public class User {
      * @return          Verification result
      */
     public boolean verifyAssertion(Assertion assertion, Context context) throws IOException {
-        return this.bls01.verify(assertion.signature, assertion.msg, MainActivity.getCipherFromBytes(assertion.nym, assertion.g, context));
+        return this.pkrbls.verify(assertion.signature, assertion.msg, MainActivity.getCipherFromBytes(assertion.nym, assertion.g, context));
     }
 
     /**
@@ -86,7 +91,7 @@ public class User {
             signatures.add(assertion.signature);
             ids.add(assertion.id);
         }
-        byte[] compressedSig = this.bls01.aggregate(signatures);
+        byte[] compressedSig = this.pkrbls.aggregate(signatures, pkrbls.setup());
         cdb.compressedAssertionDao().insert(new CompressedAssertion(compressedSig, ids));
         this.db.assertionDao().delete();
     }
@@ -97,7 +102,7 @@ public class User {
      * @param db
      * @return
      */
-    public Assertion show(byte[] signature, Database db) {
+    public Assertion show(byte[] signature, Database db) throws IOException {
         // WIP
 
         // this.updateAssertions();
@@ -110,7 +115,8 @@ public class User {
      * WIP
      */
     public void updateNym() {
-        // this.nym = this.nym.update();
+        this.r = this.pkrbls.sampleEleZr(this.parameters);
+        this.nym = this.pkrbls.updatePK(this.nym, this.parameters, r);
     }
 
     /**

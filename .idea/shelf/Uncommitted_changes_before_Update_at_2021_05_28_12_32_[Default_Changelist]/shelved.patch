@@ -1,0 +1,101 @@
+Index: app/src/main/java/com/example/pbk_test/BLS01.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.pbk_test;\n\nimport android.content.Context;\nimport android.os.Build;\n\nimport androidx.annotation.RequiresApi;\n\nimport org.bouncycastle.crypto.AsymmetricCipherKeyPair;\nimport org.bouncycastle.crypto.CipherParameters;\nimport org.bouncycastle.crypto.CryptoException;\nimport org.bouncycastle.crypto.digests.SHA256Digest;\n\nimport java.io.IOException;\n\nimport it.unisa.dia.gas.crypto.jpbc.signature.bls01.engines.BLS01Signer;\nimport it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01KeyPairGenerator;\nimport it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01ParametersGenerator;\nimport it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyGenerationParameters;\nimport it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;\nimport it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;\n\n\npublic class BLS01 {\n\n    private Context context;\n\n    public BLS01(Context context) {\n        this.context = context;\n    }\n\n    @RequiresApi(api = Build.VERSION_CODES.O)\n    public BLS01Parameters setup() throws IOException {\n        BLS01ParametersGenerator setup = new BLS01ParametersGenerator();\n        setup.init(PairingFactory.getPairingParameters(MainActivity.getCacheFile(\"a.properties\", context).toPath().toString()));\n        // setup.init(PairingFactory.getPairingParameters(MainActivity.propertiesPath));\n        // setup.init(PairingFactory.getPairingParameters(context.getAssets().open(\"a.properties\")));\n\n        return setup.generateParameters();\n    }\n\n    public AsymmetricCipherKeyPair keyGen(BLS01Parameters parameters) {\n        BLS01KeyPairGenerator keyGen = new BLS01KeyPairGenerator();\n        keyGen.init(new BLS01KeyGenerationParameters(null, parameters));\n\n        return keyGen.generateKeyPair();\n    }\n\n    public byte[] sign(String message, CipherParameters privateKey) {\n        byte[] bytes = message.getBytes();\n\n        BLS01Signer signer = new BLS01Signer(new SHA256Digest());\n        signer.init(true, privateKey);\n        signer.update(bytes, 0, bytes.length);\n\n        byte[] signature = null;\n        try {\n            signature = signer.generateSignature();\n        } catch (CryptoException e) {\n            throw new RuntimeException(e);\n        }\n        return signature;\n    }\n\n    public boolean verify(byte[] signature, String message, CipherParameters publicKey) {\n        byte[] bytes = message.getBytes();\n\n        BLS01Signer signer = new BLS01Signer(new SHA256Digest());\n        signer.init(false, publicKey);\n        signer.update(bytes, 0, bytes.length);\n\n        return signer.verifySignature(signature);\n    }\n\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/pbk_test/BLS01.java	(revision b12f715eafd4507828942588946430bf2f16c64f)
++++ app/src/main/java/com/example/pbk_test/BLS01.java	(date 1622106638026)
+@@ -9,6 +9,7 @@
+ import org.bouncycastle.crypto.CipherParameters;
+ import org.bouncycastle.crypto.CryptoException;
+ import org.bouncycastle.crypto.digests.SHA256Digest;
++import org.jetbrains.annotations.NotNull;
+ 
+ import java.io.IOException;
+ 
+@@ -17,6 +18,8 @@
+ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01ParametersGenerator;
+ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyGenerationParameters;
+ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
++import it.unisa.dia.gas.jpbc.Element;
++import it.unisa.dia.gas.jpbc.Pairing;
+ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
+ 
+ 
+@@ -61,7 +64,17 @@
+         return signature;
+     }
+ 
+-    public boolean verify(byte[] signature, String message, CipherParameters publicKey) {
++    public byte[] aggregate(@NotNull List<byte[]> signatures) {
++        Element aggregated = null;
++        aggregated.set(1);
++        for (byte[] signature: signatures) {
++            Element temp = pairing.getG1().newElementFromBytes(signature);
++            aggregated = aggregated.mul(temp);
++        }
++        return aggregated.toBytes();
++    }
++
++    public boolean verify(byte[] signature, @NotNull String message, CipherParameters publicKey) {
+         byte[] bytes = message.getBytes();
+ 
+         BLS01Signer signer = new BLS01Signer(new SHA256Digest());
+@@ -71,5 +84,21 @@
+         return signer.verifySignature(signature);
+     }
+ 
++    public boolean verifyAggre(byte[] aggregated, List<String> messages, @NotNull List<CipherParameters> publicKeys) {
++        Element aggre = pairing.getG1().newElementFromBytes(aggregated);
++
++        for (String message: messages) {
++            Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
++        }
++        Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
++
++        Element temp1 = pairing.pairing(sig, publicKey.getParameters().getG());
++        Element temp2 = pairing.pairing(h, publicKey.getPk());
++
++        return temp1.isEqual(temp2);
++    }
++
++
++
+ 
+ }
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>apply plugin: 'com.android.application'\n\nandroid {\n    compileSdkVersion 29\n    buildToolsVersion \"29.0.3\"\n\n    defaultConfig {\n        applicationId \"com.example.pbk_test\"\n        minSdkVersion 29\n        targetSdkVersion 29\n        versionCode 1\n        versionName \"1.0\"\n\n        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\n    }\n\n    buildTypes {\n        release {\n            minifyEnabled false\n            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\n        }\n    }\n\n}\n\ndependencies {\n    implementation fileTree(include: ['*.jar'], dir: 'libs')\n    implementation 'androidx.appcompat:appcompat:1.2.0'\n    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'\n    implementation 'com.google.android.material:material:1.2.1'\n    testImplementation 'junit:junit:4.12'\n    androidTestImplementation 'androidx.test.ext:junit:1.1.2'\n    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'\n    implementation files('libs/bcprov-jdk16-1.46.jar')\n    implementation files('libs/jna-3.2.5.jar')\n    implementation files('libs/jpbc-api-2.0.0.jar')\n    implementation files('libs/jpbc-benchmark-2.0.0.jar')\n    implementation files('libs/jpbc-crypto-2.0.0.jar')\n    implementation files('libs/jpbc-mm-2.0.0.jar')\n    implementation files('libs/jpbc-pbc-2.0.0.jar')\n    implementation files('libs/jpbc-plaf-2.0.0.jar')\n\n    def room_version = \"2.3.0\"\n\n    implementation \"androidx.room:room-runtime:$room_version\"\n    annotationProcessor \"androidx.room:room-compiler:$room_version\"\n    // optional - RxJava2 support for Room\n    implementation \"androidx.room:room-rxjava2:$room_version\"\n    // optional - RxJava3 support for Room\n    implementation \"androidx.room:room-rxjava3:$room_version\"\n    // optional - Guava support for Room, including Optional and ListenableFuture\n    implementation \"androidx.room:room-guava:$room_version\"\n    // optional - Test helpers\n    testImplementation \"androidx.room:room-testing:$room_version\"\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(revision b12f715eafd4507828942588946430bf2f16c64f)
++++ app/build.gradle	(date 1622106122682)
+@@ -28,6 +28,7 @@
+     implementation 'androidx.appcompat:appcompat:1.2.0'
+     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+     implementation 'com.google.android.material:material:1.2.1'
++    implementation 'org.jetbrains:annotations-java5:15.0'
+     testImplementation 'junit:junit:4.12'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"ProjectRootManager\" version=\"2\" languageLevel=\"JDK_11\" default=\"true\" project-jdk-name=\"1.8\" project-jdk-type=\"JavaSDK\">\n    <output url=\"file://$PROJECT_DIR$/build/classes\" />\n  </component>\n  <component name=\"ProjectType\">\n    <option name=\"id\" value=\"Android\" />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/misc.xml	(revision b12f715eafd4507828942588946430bf2f16c64f)
++++ .idea/misc.xml	(date 1621564310062)
+@@ -1,6 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
++  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="false" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+     <output url="file://$PROJECT_DIR$/build/classes" />
+   </component>
+   <component name="ProjectType">

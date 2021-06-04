@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.Digest;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +20,7 @@ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01ParametersGe
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyGenerationParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyParameters;
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PrivateKeyParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Pairing;
@@ -30,6 +32,7 @@ import org.bouncycastle.crypto.CipherParameters;
 public class PKRBLS {
 
     private Context context;
+
     /**
      * Construct a PKR-BLS scheme instance.
      * A PKR-BLS scheme instance.
@@ -42,14 +45,12 @@ public class PKRBLS {
     /**
      * Generate Type III pairing parameters for PKR-BLS scheme.
      * Same as the original BLS scheme.
-     * @throws IOException Error when a.properties is not found
+     * @throws IOException Error when a.properties is not found.
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
     public BLS01Parameters setup() throws IOException {
         BLS01ParametersGenerator setup = new BLS01ParametersGenerator();
         setup.init(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()));
-        // setup.init(PairingFactory.getPairingParameters(MainActivity.propertiesPath));
-        // setup.init(PairingFactory.getPairingParameters(context.getAssets().open("a.properties")));
 
         return setup.generateParameters();
     }
@@ -57,78 +58,99 @@ public class PKRBLS {
     /**
      * Generate public-secret key pair for PKR-BLS scheme.
      * Same as the original BLS scheme.
-     * @param parameters     Type III pairing parameters
-     * @throws IOException   Error when a.properties is not found
+     * @param parameters Type III pairing parameters.
      */
     public AsymmetricCipherKeyPair keyGen(BLS01Parameters parameters) {
-        BLS01KeyPairGenerator keyGen = new BLS01KeyPairGenerator();
-        keyGen.init(new BLS01KeyGenerationParameters(null, parameters));
+        Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
+        Element g = parameters.getG();
 
-        return keyGen.generateKeyPair();
+        Element sk = pairing.getZr().newRandomElement();
+        Element pk = g.powZn(sk);
+
+        return new AsymmetricCipherKeyPair(
+                new BLS01PublicKeyParameters(parameters, pk.getImmutable()),
+                new BLS01PrivateKeyParameters(parameters, sk.getImmutable())
+        );
     }
 
     /**
      * Sign signatures in PKR-BLS scheme.
      * Same as the original BLS scheme.
-     * @param message     String message to be signed.
-     * @param privateKey  Secret key of signer, used for signing message.
+     * @param message         String message to be signed.
+     * @param privateKeyParam CipherParameters type of Secret key, converted and used for signing message.
+     * @param r               randomness used in pk.
      */
-    public byte[] sign(String message, CipherParameters privateKey) {
+    public byte[] sign(String message, CipherParameters privateKeyParam, Element r) throws IOException {
         byte[] bytes = message.getBytes();
 
-        BLS01Signer signer = new BLS01Signer(new SHA256Digest());
-        signer.init(true, privateKey);
-        signer.update(bytes, 0, bytes.length);
+        // get pairing from private key
+        BLS01PrivateKeyParameters privateKey = (BLS01PrivateKeyParameters) ((BLS01KeyParameters) privateKeyParam);
+        Pairing pairing = PairingFactory.getPairing(privateKey.getParameters().getParameters());
 
-        byte[] signature = null;
-        try {
-            signature = signer.generateSignature();
-        } catch (CryptoException e) {
-            throw new RuntimeException(e);
-        }
-        return signature;
+        // compute hash of the message
+        Digest digest = new SHA256Digest();
+        digest.update(bytes, 0, bytes.length);
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+        Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
+
+        Element sig_temp = h.powZn(privateKey.getSk());
+        Element sig = sig_temp.powZn(privateKey.getSk().mul(r));
+
+        digest.reset();
+        return sig.toBytes();
+    }
+
+    /**
+     * Verify signatures in PKR-BLS scheme.
+     * @param signature      Signature to be verified.
+     * @param message        The signed message.
+     * @param publicKeyParam CipherParameters type of Public key, converted and used for verifying message-signature pair.
+     */
+    public boolean verify(byte[] signature, String message, CipherParameters publicKeyParam) {
+        byte[] bytes = message.getBytes();
+
+        // get pairing from public key
+        BLS01PublicKeyParameters publicKey = (BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKeyParam);
+        Pairing pairing = PairingFactory.getPairing(publicKey.getParameters().getParameters());
+
+        // compute hash of the message
+        Digest digest = new SHA256Digest();
+        digest.update(bytes, 0, bytes.length);
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+        Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
+
+        Element sig = pairing.getG1().newElementFromBytes(signature);
+
+        Element temp1 = pairing.pairing(sig, publicKey.getParameters().getG());
+        Element temp2 = pairing.pairing(h, publicKey.getPk());
+
+        return temp1.isEqual(temp2);
     }
 
     /**
      * Update public key with a random number r.
-     * @param publicKey      public key to be updated.
-     * @param param          public parameter of BLS scheme.
+     * @param publicKeyParam CipherParameters type of Public key, to be updated.
+     * @param parameters     public parameter of PKRBLS scheme.
      * @param r              randomness for updating public key.
-     * @throws IOException   Error when a.properties is not found.
      */
-    public CipherParameters updatePK(CipherParameters publicKey, BLS01Parameters param, Element r) throws IOException {
+    public CipherParameters updatePK(CipherParameters publicKeyParam, BLS01Parameters parameters, Element r) {
         // Update the public key
-        Element pk = ((BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKey)).getPk();
+        Element pk = ((BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKeyParam)).getPk();
         Element updated = pk.powZn(r);
-        BLS01PublicKeyParameters updatedPK = new BLS01PublicKeyParameters(param, updated.getImmutable());
+        BLS01PublicKeyParameters updatedPK = new BLS01PublicKeyParameters(parameters, updated.getImmutable());
 
         return updatedPK;
-    }
-    
-    /**
-     * Update nym.
-     * @param nym            nym=(g^r, pk^r) can be updated with new r' to (g^rr',pk^rr').
-     * @throws IOException   Error when a.properties is not found.
-     */
-    public CipherParameters updateNym(CipherParameters nym) throws IOException {
-        Element g = ((BLS01KeyParameters) nym).getParameters().getG();
-        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
-
-        Pairing pairing = PairingFactory.getPairing(param.getParameters());
-        Element r = pairing.getZr().newRandomElement();
-
-        CipherParameters updatedNym = updatePK(nym, param, r);
-        return updatedNym;
     }
 
     /**
      * Update signature with a random number r.
-     * @param param          public parameter of BLS scheme.
-     * @param r              randomness for updating signature.
-     * @throws IOException   Error when a.properties is not found.
+     * @param parameters public parameter of PKRBLS scheme.
+     * @param r          randomness for updating signature.
      */
-    public byte[] updateSIG(byte[] signature, BLS01Parameters param, Element r) throws IOException {
-        Pairing pairing = PairingFactory.getPairing(param.getParameters());
+    public byte[] updateSIG(byte[] signature, BLS01Parameters parameters, Element r) {
+        Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
 
         // Update the signature
         Element sig = pairing.getG1().newElementFromBytes(signature);
@@ -139,83 +161,82 @@ public class PKRBLS {
     }
 
     /**
-     * Update signature with a random number r.
-     * @param ca             a compressed assertion
-     * @throws IOException   Error when a.properties is not found.
-     * nyms in assertions pointed by ca also need to be updated.
-     */
-//    public static void updateCompressedAssertions(CompressedAssertion ca) throws IOException {
-//        Element g = ((BLS01KeyParameters) nyms.get(0)).getParameters().getG();
-//        BLS01Parameters param = new BLS01Parameters(PairingFactory.getPairingParameters(MainActivity.getCacheFile("a.properties", context).toPath().toString()), g);
-//
-//        Pairing pairing = PairingFactory.getPairing(param.getParameters());
-//        Element r = pairing.getZr().newRandomElement();
-//
-//        ca.signature = updateSIG(ca.signature, param, r);
-//    }
-
-
-    /**
      * Aggregate multiple signatures from PKR-BLS scheme.
-     * @param signatures     A list of signatures to be aggregated by group multiplication.
-     * @throws IOException   Error when a.properties is not found
+     *
+     * @param signatures A list of signatures to be aggregated by group multiplication.
+     * @param parameters public parameter of PKRBLS scheme.
      */
-    public byte[] aggregate(List<byte[]> signatures) throws IOException {
-        Pairing pairing = PairingFactory.getPairing(MainActivity.getCacheFile("a.properties", context).toPath().toString());
-        Field f = pairing.getG1();
-        Element aggregated = f.newElement(1);
-        for (byte[] signature: signatures) {
+    public byte[] aggregate(List<byte[]> signatures, BLS01Parameters parameters) {
+        Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
+
+        // get identity on G1 (For multiplication)
+        Element aggregate = pairing.getG1().newElement(1);
+
+        for (byte[] signature : signatures) {
             Element temp = pairing.getG1().newElementFromBytes(signature);
-            aggregated = aggregated.mul(temp);
+            aggregate = aggregate.mul(temp);
         }
-        return aggregated.toBytes();
+        return aggregate.toBytes();
     }
 
-    /**
-     * Verify signatures in PKR-BLS scheme.
-     * @param signature   Signature to be verified.
-     * @param message     The message embedded by the signature
-     * @param publicKey   Public key, used for verifying message-signature pair. Can be updated.
-     */
-    public boolean verify(byte[] signature, String message, CipherParameters publicKey) {
-        byte[] bytes = message.getBytes();
-
-        BLS01Signer signer = new BLS01Signer(new SHA256Digest());
-        signer.init(false, publicKey);
-        signer.update(bytes, 0, bytes.length);
-
-        return signer.verifySignature(signature);
-    }
 
     /**
      * Verify aggregate signatures in PKR-BLS scheme.
-     * @param aggregated   Aggregate signature to be verified.
-     * @param messages     All messages embedded by the component signatures
-     * @param publicKeys   Public keys, used for verifying each component message-signature pair. Can be updated
+     * @param aggregate       Aggregate signature to be verified.
+     * @param messages        All messages embedded by the component signatures.
+     * @param publicKeysParam CipherParameters type of Public key, used for verifying
+  aggregate signature.
      */
-//    public boolean verifyAggre(byte[] aggregated, List<String> messages, List<CipherParameters> publicKeys) {
-//        byte[] bytes = message.getBytes();
-//
-//        BLS01Signer signer = new BLS01Signer(new SHA256Digest());
-//        signer.init(false, publicKey);
-//        signer.update(bytes, 0, bytes.length);
-//
-//        return signer.verifySignature(signature);
-//
-//        Element aggre = pairing.getG1().newElementFromBytes(aggregated);
-//
-//        for (String message: messages) {
-//            Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
-//        }
-//        Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
-//
-//        Element temp1 = pairing.pairing(sig, publicKey.getParameters().getG());
-//        Element temp2 = pairing.pairing(h, publicKey.getPk());
-//
-//        return temp1.isEqual(temp2);
-//    }
+    public boolean verifyAgg(byte[] aggregate, List<String> messages, List<CipherParameters> publicKeysParam) {
+        // get pairing from the first public key
+        BLS01PublicKeyParameters publicKey = (BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKeysParam.get(0));
+        Pairing pairing = PairingFactory.getPairing(publicKey.getParameters().getParameters());
 
+        // compute pairing: e(agg, g)
+        Element agg = pairing.getG1().newElementFromBytes(aggregate);
+        Element temp1 = pairing.pairing(agg, publicKey.getParameters().getG());
 
+        // get identity on Gt (For following multiplication)
+        Element temp2 = pairing.getGT().newElement(1);
 
+        // handle each message, compute hash and multiplied pairing
+        for (int i=0; i<messages.size(); i++) {
+            byte[] bytes = messages.get(i).getBytes();
+            // compute hash of the message
+            Digest digest = new SHA256Digest();
+            digest.update(bytes, 0, bytes.length);
+            byte[] hash = new byte[digest.getDigestSize()];
+            digest.doFinal(hash, 0);
+            Element h = pairing.getG1().newElementFromHash(hash, 0, hash.length);
+            temp2 = temp2.mul(pairing.pairing(h, ((BLS01PublicKeyParameters) ((BLS01KeyParameters) publicKeysParam.get(i))).getPk()));
+            digest.reset();
+        }
 
+        return temp1.isEqual(temp2);
+    }
+
+    /**
+     * Helper function
+     * Generate a value of Field Zr by a given integer.
+     * @param i             A given integer.
+     * @param parameters    public parameter of PKRBLS scheme.
+     */
+    public Element getEleZr(int i, BLS01Parameters parameters) {
+        Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
+
+        Element e = pairing.getZr().newElement(i);
+        return e;
+    }
+
+    /**
+     * Helper function
+     * Sample a random value of Field Zr.
+     * @param parameters    public parameter of PKRBLS scheme.
+     */
+    public Element sampleEleZr(BLS01Parameters parameters) {
+        Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
+
+        Element r = pairing.getZr().newRandomElement();
+        return r;
+    }
 }
