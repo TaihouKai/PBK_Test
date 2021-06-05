@@ -267,7 +267,6 @@ public class DatabaseActivity extends AppCompatActivity {
                     else
                         Log.d("PBK_Test - VerifyShow", "Fail");
 
-
                     long timeTakenNum = System.currentTimeMillis() - startTime;
                     String timeTaken = "Time taken - show: " + timeTakenNum + "ms";
 

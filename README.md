@@ -5,7 +5,7 @@
 - Android Studio
     - Android Gradle Plugin Version: 3.6.3
     - Gradle Version: 5.6.4
-    - Compile SDK Version: API 29, Android 10.0 (Q)
+    - Compile SDK Version: API 30, Android 11.0 (R)
     - Build Tool Version: 29.0.3
 - Java
     - Embedded JDK in Android Studio.
