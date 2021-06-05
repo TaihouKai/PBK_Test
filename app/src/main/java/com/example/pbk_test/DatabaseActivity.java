@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import it.unisa.dia.gas.jpbc.Element;
+
 public class DatabaseActivity extends AppCompatActivity {
 
     public final String ATTR_EXAMPLE = "altitude-latitude-longitude;mm-dd-hh-mm-ss;range-unit";
@@ -243,12 +245,13 @@ public class DatabaseActivity extends AppCompatActivity {
                         // Get all Assertions linked with this CompressedAssertion
                         List<Assertion> assertionList = user.db.assertionDao().findAllByIDs(ca.ids);
                         // Record associated with this CompressedAssertion
-                        Record r = new Record(ca.signature, user.pkrbls, user.parameters, user.r);
+                        Element rand = user.pkrbls.sampleEleZr(user.parameters);
+                        Record r = new Record(ca.signature, user.pkrbls, user.parameters, rand);
                         // For every Assertion in the list
                         for (Assertion assertion: assertionList) {
                             try {
                                 // Update PK and add to record
-                                r.nyms.add(user.pkrbls.updatePK(MainActivity.getCipherFromBytes(assertion.nym, assertion.g, getApplicationContext()), user.parameters, user.pkrbls.sampleEleZr(user.parameters)));
+                                r.nyms.add(user.pkrbls.updatePK(MainActivity.getCipherFromBytes(assertion.nym, assertion.g, getApplicationContext()), user.parameters, rand));
                                 // Add msg to record
                                 r.msgs.add(assertion.msg);
                                 // Add g^r to record

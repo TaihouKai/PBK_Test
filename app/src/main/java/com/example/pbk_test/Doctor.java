@@ -13,6 +13,9 @@ public class Doctor {
     }
 
     public boolean verifyShow(List<Record> list) {
+        // if list is empty, return false.
+        if (list.isEmpty())
+            return false;
         boolean res = true;
         for (Record r: list) {
             res = this.pkrbls.verifyAgg(r.signature, r.msgs, r.nyms);
