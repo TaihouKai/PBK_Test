@@ -71,6 +71,16 @@
       app:layout_constraintTop_toTopOf="@+id/buttonMeetGen" />
 
   <Button
+      android:id="@+id/buttonMeetVerRepeat"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="2dp"
+      android:onClick="meetVerConcurRepeat"
+      android:text="@string/buttonMeetVerRepeat_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonBLE"
+      app:layout_constraintTop_toTopOf="@+id/buttonBLE" />
+
+  <Button
       android:id="@+id/buttonKeyGen"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
@@ -85,63 +95,73 @@
       android:id="@+id/buttonBLE"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
+      android:layout_marginStart="2dp"
       android:onClick="bleMode"
       android:text="@string/buttonBLE_name"
-      app:layout_constraintStart_toStartOf="@+id/buttonShow"
+      app:layout_constraintStart_toEndOf="@+id/buttonDiscrete"
       app:layout_constraintTop_toTopOf="@+id/buttonDiscrete" />
 
   <Button
       android:id="@+id/buttonDiscrete"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginTop="20dp"
+      android:layout_marginTop="8dp"
       android:onClick="discreteMode"
       android:text="@string/buttonDiscrete_name"
-      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintStart_toStartOf="@+id/buttonSave"
       app:layout_constraintTop_toBottomOf="@+id/buttonSave" />
 
   <EditText
       android:id="@+id/fieldTimes"
       android:layout_width="66dp"
       android:layout_height="39dp"
+      android:layout_marginStart="8dp"
       android:ems="10"
       android:hint="@string/fieldTimes_hint"
       android:importantForAutofill="no"
       android:inputType="number"
-      app:layout_constraintStart_toStartOf="@+id/buttonUpdate"
-      app:layout_constraintTop_toTopOf="@+id/buttonBLE" />
+      app:layout_constraintStart_toEndOf="@+id/buttonSaveRepeat"
+      app:layout_constraintTop_toTopOf="@+id/buttonSaveRepeat" />
+
+  <EditText
+      android:id="@+id/fieldCount"
+      android:layout_width="66dp"
+      android:layout_height="39dp"
+      android:layout_marginStart="8dp"
+      android:ems="10"
+      android:hint="@string/fieldCount_hint"
+      android:importantForAutofill="no"
+      android:inputType="number"
+      app:layout_constraintStart_toEndOf="@+id/fieldTimes"
+      app:layout_constraintTop_toTopOf="@+id/fieldTimes" />
 
   <Button
       android:id="@+id/buttonUpdate"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginStart="44dp"
       android:onClick="updateConcur"
       android:text="@string/buttonUpdate_name"
-      app:layout_constraintStart_toEndOf="@+id/buttonShow"
+      app:layout_constraintStart_toStartOf="@+id/buttonMeetVer"
       app:layout_constraintTop_toTopOf="@+id/buttonShow" />
 
   <Button
       android:id="@+id/buttonSave"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginTop="20dp"
+      android:layout_marginTop="8dp"
       android:onClick="saveConcur"
       android:text="@string/buttonSave_name"
-      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintStart_toStartOf="@+id/buttonKeyGen"
       app:layout_constraintTop_toBottomOf="@+id/buttonKeyGen" />
 
   <Button
       android:id="@+id/buttonShow"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginTop="20dp"
       android:onClick="showConcur"
       android:text="@string/buttonShow_name"
       app:layout_constraintStart_toStartOf="@+id/buttonMeetGen"
-      app:layout_constraintTop_toBottomOf="@+id/buttonKeyGen" />
+      app:layout_constraintTop_toTopOf="@+id/buttonSave" />
 
   <Button
       android:id="@+id/buttonMeetGen"
@@ -154,6 +174,16 @@
       app:layout_constraintTop_toTopOf="@+id/buttonKeyGen" />
 
   <Button
+      android:id="@+id/buttonMeetGenRepeat"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="2dp"
+      android:onClick="meetGenConcurRepeat"
+      android:text="@string/buttonMeetGenRepeat_name"
+      app:layout_constraintStart_toEndOf="@+id/buttonMeetVerRepeat"
+      app:layout_constraintTop_toTopOf="@+id/buttonMeetVerRepeat" />
+
+  <Button
       android:id="@+id/buttonDeleteAll"
       android:layout_width="0dp"
       android:layout_height="wrap_content"
@@ -164,5 +194,15 @@
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintHorizontal_bias="0.0"
       app:layout_constraintStart_toStartOf="parent" />
+
+  <Button
+      android:id="@+id/buttonSaveRepeat"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:onClick="saveConcurRepeat"
+      android:text="@string/buttonSaveRepeat_name"
+      app:layout_constraintStart_toStartOf="@+id/buttonDiscrete"
+      app:layout_constraintTop_toBottomOf="@+id/buttonDiscrete" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DatabaseActivity extends AppCompatActivity {
 
@@ -55,25 +56,7 @@ public class DatabaseActivity extends AppCompatActivity {
         long timeTakenNum = System.currentTimeMillis() - startTime;
         String timeTaken = "Time taken - keyGen: " + timeTakenNum + "ms";
 
-        timeTotal = 0;
-        timeTotal += timeTakenNum;
-        display(timeTaken);
-        displayTotal(String.valueOf(timeTotal));
-    }
-
-    /**
-     * (Without concurrency) Meet a person -- generate user's assertion.
-     * You should NEVER use this method unless you modify the database to be manipulate-able in UI.
-     * @param view Required by Android Studio
-     */
-    @Deprecated
-    public void meetGen(View view) {
-        long startTime = System.currentTimeMillis();
-        Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, true);
-        appendTable(findViewById(R.id.tableLayout), assertion.msg);
-        long timeTakenNum = System.currentTimeMillis() - startTime;
-        String timeTaken = "Time taken - meetGen: " + timeTakenNum + "ms";
-
+        // timeTotal = 0;
         timeTotal += timeTakenNum;
         display(timeTaken);
         displayTotal(String.valueOf(timeTotal));
@@ -101,25 +84,22 @@ public class DatabaseActivity extends AppCompatActivity {
         exec.getBackground().shutdown();
     }
 
-    /**
-     * (Without concurrency) Meet a person -- verify assertion received.
-     * Deprecated. Only for reference.
-     * @param view          Required by Android Studio
-     * @throws IOException  Error when a.properties is not found
-     */
-    @Deprecated
-    public void meetVer(View view) throws IOException {
-        // Create a new user and generate assertion
-        User user_alter = new User(getApplicationContext());
-        user_alter.keyGen();
-        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
-
+    public void meetGenConcurRepeat(View view) throws InterruptedException {
+        ApplicationExecutors exec = new ApplicationExecutors();
         long startTime = System.currentTimeMillis();
-        user.verifyAssertion(assertion_alter, getApplicationContext());
-        long timeTakenNum = System.currentTimeMillis() - startTime;
-        String timeTaken = "Time taken - meetVer: " + timeTakenNum + "ms";
+        for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
+            exec.getBackground().execute(
+                    () -> {
+                        user.generateAssertion(ATTR_EXAMPLE, true);
+                    }
+            );
+        }
+        exec.getBackground().shutdown();
+        exec.getBackground().awaitTermination(1, TimeUnit.HOURS);
 
-        timeTotal += timeTakenNum;
+        long timeTakenNum = System.currentTimeMillis() - startTime;
+        String timeTaken = "Time taken - meetGenRepeat: " + timeTakenNum + "ms";
+        timeTotal = timeTakenNum;
         display(timeTaken);
         displayTotal(String.valueOf(timeTotal));
     }
@@ -127,7 +107,6 @@ public class DatabaseActivity extends AppCompatActivity {
     /**
      * (With concurrency) Meet a person -- verify assertion received. Save to database if yes.
      * @param view          Required by Android Studio
-     * @throws IOException  Error when a.properties is not found
      */
     public void meetVerConcur(View view) {
         ApplicationExecutors exec = new ApplicationExecutors();
@@ -155,10 +134,48 @@ public class DatabaseActivity extends AppCompatActivity {
                         }
                         else
                             Log.d("PBK_Test - VerifyAssertion", "Fail");
-                    } catch (Exception e) {}
+                    } catch (Exception ignored) {}
                 }
         );
         exec.getBackground().shutdown();
+    }
+
+    public void meetVerConcurRepeat(View view) throws InterruptedException {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        AtomicLong totalTimeTaken = new AtomicLong();
+        for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
+            exec.getBackground().execute(
+                    () -> {
+                        try {
+                            // Create a new user and generate assertion
+                            User user_alter = new User(getApplicationContext());
+                            user_alter.keyGen();
+                            Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
+
+                            long startTime = System.currentTimeMillis();
+                            boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
+                            if (res)
+                                user.db.assertionDao().insert(assertion_alter);
+                            long timeTakenNum = System.currentTimeMillis() - startTime;
+                            totalTimeTaken.addAndGet(timeTakenNum);
+
+                            if (res) {
+                                Log.d("PBK_Test - VerifyAssertion", "Success");
+                                appendTable(findViewById(R.id.tableLayout), assertion_alter.msg);
+                            } else
+                                Log.d("PBK_Test - VerifyAssertion", "Fail");
+                        } catch (Exception ignored) {}
+                    }
+            );
+        }
+
+        exec.getBackground().shutdown();
+        exec.getBackground().awaitTermination(1, TimeUnit.HOURS);
+
+        String timeTaken = "Time taken - meetVerRepeat: " + totalTimeTaken + "ms";
+        timeTotal = totalTimeTaken.longValue();
+        display(timeTaken);
+        displayTotal(String.valueOf(timeTotal));
     }
 
     public void saveConcur(View view) {
@@ -178,6 +195,37 @@ public class DatabaseActivity extends AppCompatActivity {
                     displayTotal(String.valueOf(timeTotal));
                 }
         );
+    }
+
+    public void saveConcurRepeat(View view) throws InterruptedException {
+        ApplicationExecutors exec = new ApplicationExecutors();
+        AtomicLong totalTimeTaken = new AtomicLong();
+        for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
+            exec.getBackground().execute(
+                    () -> {
+                        // Reset db
+                        deleteAllConcur(view);
+
+                        // Generate assertions based on fieldCount
+                        for (int j = 0; j<Integer.parseInt(((EditText)findViewById(R.id.fieldCount)).getText().toString()); j++) {
+                            user.generateAssertion(ATTR_EXAMPLE, true);
+                        }
+                        // Save
+                        long startTime = System.currentTimeMillis();
+                        user.save();
+                        long timeTakenNum = System.currentTimeMillis() - startTime;
+                        totalTimeTaken.addAndGet(timeTakenNum);
+                    }
+            );
+        }
+
+        exec.getBackground().shutdown();
+        exec.getBackground().awaitTermination(1, TimeUnit.HOURS);
+
+        String timeTaken = "Time taken - saveRepeat: " + totalTimeTaken + "ms";
+        timeTotal = totalTimeTaken.longValue();
+        display(timeTaken);
+        displayTotal(String.valueOf(timeTotal));
     }
 
     public void showConcur(View view) {
@@ -238,7 +286,7 @@ public class DatabaseActivity extends AppCompatActivity {
                     long timeTakenNum = System.currentTimeMillis() - startTime;
                     String timeTaken = "Time taken - updateNym: " + timeTakenNum + "ms";
 
-                    timeTotal = timeTakenNum;
+                    timeTotal += timeTakenNum;
                     display(timeTaken);
                     displayTotal(String.valueOf(timeTotal));
                 }
@@ -298,6 +346,7 @@ public class DatabaseActivity extends AppCompatActivity {
             displayTotal(String.valueOf(timeTotal));
         } catch (Exception e) {
             // When fieldTimes is not properly filled
+            // ... or interrupted
         }
     }
 

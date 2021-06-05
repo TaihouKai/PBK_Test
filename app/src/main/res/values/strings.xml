@@ -18,8 +18,13 @@
 
     <string name="buttonUpdate_name">Update</string>
 
+    <string name="buttonMeetGenRepeat_name">MtG Rp</string>
+    <string name="buttonMeetVerRepeat_name">MtV Rp</string>
+    <string name="buttonSaveRepeat_name">Sv Rp</string>
+
     <string name="display_name">Anticipated time</string>
     <string name="displayTotal_name">Total time</string>
 
     <string name="fieldTimes_hint">Times?</string>
+    <string name="fieldCount_hint">Count?</string>
 </resources>
