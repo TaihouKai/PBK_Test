@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -113,6 +114,7 @@ public class User {
      * @return      Message
      */
     public static String generateMsg(String attr) {
-        return attr + "|" + ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);
+        // return attr + "|" + ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);
+        return attr + "|" + new SecureRandom().nextInt(Integer.MAX_VALUE);
     }
 }
