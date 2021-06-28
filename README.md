@@ -1,4 +1,4 @@
-# Rerandomizable PublicKey Encryption for Contact Tracing System DEMO
+# Rerandomizable BLS Signature for Contact Tracing System DEMO
 
 ## Prerequisites
 > You don't have to manually install these by yourself except Android Studio. They come with Android Studio.
