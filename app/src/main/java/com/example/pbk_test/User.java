@@ -63,9 +63,9 @@ public class User {
      * @param insert    Whether to insert this assertion into db
      * @return          Assertion
      */
-    public Assertion generateAssertion(String attr, boolean insert) {
+    public Assertion generateAssertion(String attr, boolean insert, boolean isBLE) {
         String msg = User.generateMsg(attr);
-        Assertion assertion = new Assertion(this.nym, msg, this.pkrbls.sign(msg, this.keyPair.getPrivate(), this.r), this.parameters.getG().powZn(this.r).toBytes());
+        Assertion assertion = new Assertion(this.nym, msg, this.pkrbls.sign(msg, this.keyPair.getPrivate(), this.r), this.parameters.getG().powZn(this.r).toBytes(), isBLE);
         if (insert)
             db.assertionDao().insert(assertion);
         return assertion;

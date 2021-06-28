@@ -36,13 +36,17 @@ public class Assertion {
     @ColumnInfo(name = "isSaved")
     public boolean isSaved;
 
-    public Assertion(CipherParameters cipherNym, String msg, byte[] signature, byte[] gPowR) {
+    @ColumnInfo(name = "isBLE")
+    public boolean isBLE;
+
+    public Assertion(CipherParameters cipherNym, String msg, byte[] signature, byte[] gPowR, boolean isBLE) {
         this.nym = MainActivity.getBytesFromCipher(cipherNym);
         this.msg = msg;
         this.signature = signature;
         this.g = ((BLS01KeyParameters)cipherNym).getParameters().getG().toBytes();
         this.gPowR = gPowR;
         this.isSaved = false;
+        this.isBLE = isBLE;
     }
 
     public Assertion() {}

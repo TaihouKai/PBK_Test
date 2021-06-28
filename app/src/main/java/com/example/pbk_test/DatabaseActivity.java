@@ -50,7 +50,6 @@ public class DatabaseActivity extends AppCompatActivity {
      * Generate key pair.
      * This should NOT run in parallel since keypair is required in every single operation.
      * @param view          Required by Android Studio
-     * @throws IOException  Error when a.properties is not found
      */
     public void generateKey(View view) {
         long startTime = System.currentTimeMillis();
@@ -73,7 +72,7 @@ public class DatabaseActivity extends AppCompatActivity {
         exec.getBackground().execute(
                 () -> {
                     long startTime = System.currentTimeMillis();
-                    Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, true);
+                    Assertion assertion = user.generateAssertion(ATTR_EXAMPLE, true, true);
                     long timeTakenNum = System.currentTimeMillis() - startTime;
                     String timeTaken = "Time taken - meetGen: " + timeTakenNum + "ms";
 
@@ -91,9 +90,7 @@ public class DatabaseActivity extends AppCompatActivity {
         long startTime = System.currentTimeMillis();
         for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
             exec.getBackground().execute(
-                    () -> {
-                        user.generateAssertion(ATTR_EXAMPLE, true);
-                    }
+                    () -> user.generateAssertion(ATTR_EXAMPLE, true, true)
             );
         }
         exec.getBackground().shutdown();
@@ -118,7 +115,7 @@ public class DatabaseActivity extends AppCompatActivity {
                         // Create a new user and generate assertion
                         User user_alter = new User(getApplicationContext());
                         user_alter.keyGen();
-                        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
+                        Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false, true);
 
                         long startTime = System.currentTimeMillis();
                         boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
@@ -152,7 +149,7 @@ public class DatabaseActivity extends AppCompatActivity {
                             // Create a new user and generate assertion
                             User user_alter = new User(getApplicationContext());
                             user_alter.keyGen();
-                            Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
+                            Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false, true);
 
                             long startTime = System.currentTimeMillis();
                             boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
@@ -210,7 +207,7 @@ public class DatabaseActivity extends AppCompatActivity {
 
                         // Generate assertions based on fieldCount
                         for (int j = 0; j<Integer.parseInt(((EditText)findViewById(R.id.fieldCount)).getText().toString()); j++) {
-                            user.generateAssertion(ATTR_EXAMPLE, true);
+                            user.generateAssertion(ATTR_EXAMPLE, true, false);
                         }
                         // Save
                         long startTime = System.currentTimeMillis();
@@ -256,6 +253,8 @@ public class DatabaseActivity extends AppCompatActivity {
                                 r.msgs.add(assertion.msg);
                                 // Add g^r to record
                                 r.gPowRs.add(assertion.gPowR);
+                                // Add isBLE to record
+                                r.isBLEs.add(assertion.isBLE);
                             } catch (IOException e) {}
                         }
                         // Add this record to record list
@@ -301,7 +300,7 @@ public class DatabaseActivity extends AppCompatActivity {
             long startTime = System.currentTimeMillis();
             for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
                 exec.getBackground().execute(
-                        () -> user.generateAssertion(ATTR_EXAMPLE, true)
+                        () -> user.generateAssertion(ATTR_EXAMPLE, true, false)
                 );
             }
             exec.getBackground().shutdown();
@@ -324,12 +323,12 @@ public class DatabaseActivity extends AppCompatActivity {
             long startTime = System.currentTimeMillis();
             User user_alter = new User(getApplicationContext());
             user_alter.keyGen();
-            Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false);
+            Assertion assertion_alter = user_alter.generateAssertion(ATTR_EXAMPLE, false, true);
             for (int i = 0; i<Integer.parseInt(((EditText)findViewById(R.id.fieldTimes)).getText().toString()); i++) {
                 exec.getBackground().execute(
                         () -> {
                             try {
-                                user.generateAssertion(ATTR_EXAMPLE, true);
+                                user.generateAssertion(ATTR_EXAMPLE, true, true);
                                 boolean res = user.verifyAssertion(assertion_alter, getApplicationContext());
                                 if (res)
                                     user.db.assertionDao().insert(assertion_alter);
