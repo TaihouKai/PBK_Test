@@ -129,6 +129,12 @@ public class DatabaseActivity extends AppCompatActivity {
         return false;
     }
 
+    public String currentNation() {
+        // Google Maps...
+
+        return "";
+    }
+
     public void updateTemperature() {
         // Outdoor/Indoor?
     }
