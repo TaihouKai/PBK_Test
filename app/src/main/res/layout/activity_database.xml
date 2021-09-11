@@ -46,7 +46,7 @@
   <TableLayout
       android:id="@+id/tableLayout"
       android:layout_width="393dp"
-      android:layout_height="187dp"
+      android:layout_height="107dp"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintHorizontal_bias="1.0"
       app:layout_constraintStart_toStartOf="parent"
@@ -54,11 +54,21 @@
 
   <TableLayout
       android:id="@+id/tableLayoutCompressed"
-      android:layout_width="395dp"
-      android:layout_height="127dp"
+      android:layout_width="392dp"
+      android:layout_height="94dp"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/tableLayout" />
+
+  <TableLayout
+      android:id="@+id/tableBLE"
+      android:layout_width="391dp"
+      android:layout_height="0dp"
+      android:layout_marginTop="20dp"
+      app:layout_constraintBottom_toTopOf="@+id/buttonDeleteAll"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/buttonSaveRepeat"/>
 
   <Button
       android:id="@+id/buttonMeetVer"
@@ -204,5 +214,16 @@
       android:text="@string/buttonSaveRepeat_name"
       app:layout_constraintStart_toStartOf="@+id/buttonDiscrete"
       app:layout_constraintTop_toBottomOf="@+id/buttonDiscrete" />
+
+  <Button
+      android:id="@+id/buttonDetect"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:onClick="detectBLE"
+      android:text="@string/buttonDetect_name"
+      app:layout_constraintEnd_toEndOf="@+id/buttonMeetGenRepeat"
+      app:layout_constraintStart_toEndOf="@+id/buttonMeetVerRepeat"
+      app:layout_constraintTop_toBottomOf="@+id/buttonMeetGenRepeat" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

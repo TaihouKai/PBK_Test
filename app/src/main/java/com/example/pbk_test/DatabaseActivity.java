@@ -2,6 +2,12 @@ package com.example.pbk_test;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +19,7 @@ import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -21,11 +28,54 @@ import it.unisa.dia.gas.jpbc.Element;
 
 public class DatabaseActivity extends AppCompatActivity {
 
+    // Default message
     public final String ATTR_EXAMPLE = "altitude-latitude-longitude;mm-dd-hh-mm-ss;range-unit";
+    // Measured power, factory-calibrated constant, different from device to device
+    // Here is the value for Samsung Galaxy Note 10+ as the authors tested
+    public final int MEASURED_POWER = -50;
+    // Path loss exponent (average value of 4 for mobile devices)
+    public final int N = 4;
 
     public User user;
     public Doctor doctor;
     public long timeTotal;
+    public BluetoothAdapter bluetoothAdapter;
+
+    // Environmental factors
+    // Initialized in onCreate
+    // Updated when used <-- Important!
+    public int temperature; // Celsius
+    public int rh; // Percentage
+    public int airVelocity; // Metre per second
+
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Discovery has found a device. Get the BluetoothDevice
+                // object and its info from the Intent.
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName(); // Device name
+                String deviceHardwareAddress = device.getAddress(); // MAC address
+                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE); // RSSI
+                // Toast.makeText(getApplicationContext(),"  RSSI: " + rssi + "dBm", Toast.LENGTH_SHORT).show();
+
+                // Append to tableBLE
+                appendTableFront(findViewById(R.id.tableBLE), deviceName + "_" + rssi);
+
+                // Estimate target distance
+                double distance = Math.pow(10, (double)((MEASURED_POWER - rssi) / (10 * N)));
+
+                // Estimate target infection zone
+
+                // Compare distance with infection zone
+
+                // Estimate target TTL
+
+            }
+        }
+    };
 
     /**
      * Required by Android Studio.
@@ -42,8 +92,53 @@ public class DatabaseActivity extends AppCompatActivity {
         } catch (IOException e) {}
         timeTotal = 0;
 
+        // Initializations
         initializeTable();
         initializeTableCompressed();
+        temperature = 20;
+        rh = 40;
+        airVelocity = 0;
+
+        // Bluetooth
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter == null) {
+            // Device doesn't support Bluetooth
+        }
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 0);
+        }
+
+        // Register for broadcasts when a device is discovered.
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(receiver, filter);
+
+        // Make discoverable
+        if (bluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Log.d("PBK_Test - Discoverable", "Getting discoverable!");
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
+    }
+
+    public boolean isOutdoor() {
+        // Google Maps...
+
+        return false;
+    }
+
+    public void updateTemperature() {
+        // Outdoor/Indoor?
+    }
+
+    public void updateRH() {
+        // Outdoor/Indoor?
+    }
+
+    public void updateAirVelocity() {
+        // Outdoor/Indoor?
     }
 
     /**
@@ -56,11 +151,18 @@ public class DatabaseActivity extends AppCompatActivity {
         user.keyGen();
         long timeTakenNum = System.currentTimeMillis() - startTime;
         String timeTaken = "Time taken - keyGen: " + timeTakenNum + "ms";
+        // Set PublicKey as Bluetooth name
+        String newName = Base64.getEncoder().encodeToString(MainActivity.getBytesFromCipher(user.nym));
+        bluetoothAdapter.setName(newName);
+        // base64 encoded string to byte[]
+        // byte[] decode = Base64.getDecoder().decode(s);
 
         // timeTotal = 0;
         timeTotal += timeTakenNum;
         display(timeTaken);
         displayTotal(String.valueOf(timeTotal));
+
+        Log.d("PBK_Test - NameChange", "Name change: " + newName);
     }
 
     /**
@@ -351,6 +453,11 @@ public class DatabaseActivity extends AppCompatActivity {
         }
     }
 
+    public void detectBLE(View view) {
+        // Start Discovery
+        bluetoothAdapter.startDiscovery();
+    }
+
     /**
      * (Without concurrency) Delete all data in the database.
      * You should NEVER use this method unless you modify the database to be manipulate-able in UI.
@@ -375,6 +482,7 @@ public class DatabaseActivity extends AppCompatActivity {
                     user.db.compressedAssertionDao().delete();
                     clearTable(findViewById(R.id.tableLayout));
                     clearTable(findViewById(R.id.tableLayoutCompressed));
+                    clearTable(findViewById(R.id.tableBLE));
                     timeTotal = 0;
                 }
         );
@@ -433,6 +541,22 @@ public class DatabaseActivity extends AppCompatActivity {
         runOnUiThread(() -> tl.addView(newRow));
     }
 
+    public void appendTableFront(TableLayout tl, String msg) {
+        TableRow newRow = new TableRow(this);
+        newRow.setBackgroundColor(Color.GRAY);
+        newRow.setLayoutParams(new TableRow.LayoutParams(
+                TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT));
+
+        TextView label_id = new TextView(this);
+        label_id.setText(msg);
+        label_id.setTextColor(Color.WHITE);
+        label_id.setPadding(5, 5, 5, 5);
+        newRow.addView(label_id);
+
+        tl.addView(newRow);
+    }
+
     /**
      * Clear the table.
      * @param tl Table to be cleared
@@ -461,5 +585,13 @@ public class DatabaseActivity extends AppCompatActivity {
             TextView res = findViewById(R.id.resultTotal);
             res.setText("Total time taken: " + str + "ms");
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // Don't forget to unregister the ACTION_FOUND receiver.
+        unregisterReceiver(receiver);
     }
 }
