@@ -15,3 +15,6 @@
 2. Open this repo as a project in Android Studio.
 3. Configure/install environments as Prerequisites shows.
 4. (Optional) You can choose your own JDK instead of the embedded one.
+
+## Construction
+![System Construction](./system-diagram.png)
