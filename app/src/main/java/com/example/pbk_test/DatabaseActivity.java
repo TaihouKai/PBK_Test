@@ -17,7 +17,11 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -41,12 +45,18 @@ public class DatabaseActivity extends AppCompatActivity {
     public long timeTotal;
     public BluetoothAdapter bluetoothAdapter;
 
+    public double[] lastCoordinate;
+    public int nextDistance;
+
     // Environmental factors
     // Initialized in onCreate
     // Updated when used <-- Important!
     public int temperature; // Celsius
     public int rh; // Percentage
     public int airVelocity; // Metre per second
+    public int speed; // Metre per second
+
+    public JSONObject researchData;
 
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -59,7 +69,6 @@ public class DatabaseActivity extends AppCompatActivity {
                 String deviceName = device.getName(); // Device name
                 String deviceHardwareAddress = device.getAddress(); // MAC address
                 int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE); // RSSI
-                // Toast.makeText(getApplicationContext(),"  RSSI: " + rssi + "dBm", Toast.LENGTH_SHORT).show();
 
                 // Append to tableBLE
                 appendTableFront(findViewById(R.id.tableBLE), deviceName + "_" + rssi);
@@ -67,12 +76,16 @@ public class DatabaseActivity extends AppCompatActivity {
                 // Estimate target distance
                 double distance = Math.pow(10, (double)((MEASURED_POWER - rssi) / (10 * N)));
 
-                // Estimate target infection zone
-
-                // Compare distance with infection zone
-
-                // Estimate target TTL
-
+                int infectionDistance = -1;
+                try {
+                    infectionDistance = (int)(researchData.getJSONObject("distance").getJSONObject("indoor").getDouble("k") * 500
+                            + researchData.getJSONObject("distance").getJSONObject("indoor").getDouble("b"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                if (distance <= infectionDistance) {
+                    // record this person's pk
+                }
             }
         }
     };
@@ -98,6 +111,14 @@ public class DatabaseActivity extends AppCompatActivity {
         temperature = 20;
         rh = 40;
         airVelocity = 0;
+        speed = 0;
+        lastCoordinate = new double[]{0, 0, 0};
+        nextDistance = 0;
+        try {
+            researchData = new JSONObject(loadJSONFromAsset());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         // Bluetooth
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -112,15 +133,6 @@ public class DatabaseActivity extends AppCompatActivity {
         // Register for broadcasts when a device is discovered.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(receiver, filter);
-
-        // Make discoverable
-        if (bluetoothAdapter.getScanMode() !=
-                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-            Log.d("PBK_Test - Discoverable", "Getting discoverable!");
-            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            startActivity(discoverableIntent);
-        }
     }
 
     public boolean isOutdoor() {
@@ -129,22 +141,129 @@ public class DatabaseActivity extends AppCompatActivity {
         return false;
     }
 
+    /**
+     * Get current location
+     * @return {longitude, latitude, elevation}
+     */
+    public double[] currentLocation() {
+        // Google Maps...
+
+        return new double[0];
+    }
+
     public String currentNation() {
         // Google Maps...
 
         return "";
     }
 
+    public void updateSpeed() {
+        // Google Earth... or Google Maps...
+    }
+
+    public boolean isVehicle() {
+        updateSpeed();
+        // take 2m/s as threshold to judge whether a person is walking/running
+        // ... or in a vehicle
+        int threshold = 2;
+        if (speed > threshold)
+            return true;
+        else
+            return false;
+    }
+
     public void updateTemperature() {
-        // Outdoor/Indoor?
+        if (isOutdoor()) {
+            // Google Earth...
+        }
+        else {
+            // Local regulations...
+        }
     }
 
     public void updateRH() {
-        // Outdoor/Indoor?
+        if (isOutdoor()) {
+            // Google Earth...
+        }
+        else {
+            // Local regulations...
+        }
     }
 
     public void updateAirVelocity() {
-        // Outdoor/Indoor?
+        if (isOutdoor()) {
+            // Google Earth...
+        }
+        else {
+            // Local regulations...
+        }
+    }
+
+    public void background() {
+        // lastCoordinate + distance > lastCoordinate - currentCoordinate
+        // --> recordDiscrete();
+    }
+
+    public void recordDiscrete() {
+        try {
+            int infectionDistance = -1; // in metres
+            int ttl = -1; // in minutes; (data is in hours)
+
+            boolean isOutdoor = isOutdoor();
+
+            // Estimate target infection zone
+            // y=kx+b
+            // 0.5m/s: ASHRAE 110-1995 Method of Testing Performance of Laboratory Fume Hoods, US department of energy
+            updateAirVelocity();
+            if (isOutdoor && airVelocity > 0.5) {
+                infectionDistance = 0;
+            }
+            else if (isOutdoor && airVelocity <= 0.5) {
+                // outdoor
+                infectionDistance = (int)(researchData.getJSONObject("distance").getJSONObject("outdoor").getDouble("k") * 500
+                        + researchData.getJSONObject("distance").getJSONObject("outdoor").getDouble("b"));
+            } else {
+                // indoor
+                infectionDistance = (int)(researchData.getJSONObject("distance").getJSONObject("indoor").getDouble("k") * 500
+                        + researchData.getJSONObject("distance").getJSONObject("indoor").getDouble("b"));
+            }
+
+            // Estimate TTL
+            updateTemperature();
+            updateRH();
+            if (airVelocity > 0.5) {
+                ttl = 0;
+            }
+            else if (temperature >= 25) {
+                // t30
+                if (rh >= 55.7) {
+                    // ttl = max
+                }
+                else {
+                    // Determine using RH
+                }
+            }
+            else {
+                // t20
+                // Determine using RH
+            }
+
+            if (infectionDistance > 0 && ttl > 0) {
+                // Generate record
+
+                // Set next timing
+                lastCoordinate = currentLocation();
+                nextDistance = infectionDistance;
+            }
+            else {
+                // Set next timing
+                lastCoordinate = currentLocation();
+                nextDistance = 5; // standard distance
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -459,7 +578,19 @@ public class DatabaseActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Make this device discoverable and start discovery
+     * @param view Required by Android Studio
+     */
     public void detectBLE(View view) {
+        // Make discoverable
+        if (bluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Log.d("PBK_Test - Discoverable", "Getting discoverable!");
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
         // Start Discovery
         bluetoothAdapter.startDiscovery();
     }
@@ -591,6 +722,22 @@ public class DatabaseActivity extends AppCompatActivity {
             TextView res = findViewById(R.id.resultTotal);
             res.setText("Total time taken: " + str + "ms");
         });
+    }
+
+    public String loadJSONFromAsset() {
+        String json = null;
+        try {
+            InputStream is = DatabaseActivity.this.getAssets().open("researchData.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
     }
 
     @Override

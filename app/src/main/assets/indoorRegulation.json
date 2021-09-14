@@ -1,0 +1,17 @@
+{
+  "temperature": {
+    "Japan": 22.5,
+    "USA": 22,
+    "UK": 16,
+    "France": 19,
+    "ChinaWinter": 27,
+    "ChinaSummer": 18
+  },
+  "rh": {
+    "Japan": 55,
+    "USA": 40,
+    "UK": -1,
+    "France": -1,
+    "China": 53
+  }
+}
