@@ -47,6 +47,7 @@ public class DatabaseActivity extends AppCompatActivity {
 
     public double[] lastCoordinate;
     public int nextDistance;
+    public long lastRecord;
 
     // Environmental factors
     // Initialized in onCreate
@@ -114,6 +115,7 @@ public class DatabaseActivity extends AppCompatActivity {
         speed = 0;
         lastCoordinate = new double[]{0, 0, 0};
         nextDistance = 0;
+        lastRecord = 0;
         try {
             researchData = new JSONObject(loadJSONFromAsset());
         } catch (JSONException e) {
@@ -201,6 +203,7 @@ public class DatabaseActivity extends AppCompatActivity {
 
     public void background() {
         // lastCoordinate + distance > lastCoordinate - currentCoordinate
+        //     or currentTime - lastRecord > threshold(e.g.30s)
         // --> recordDiscrete();
     }
 
