@@ -60,6 +60,13 @@ public class PKRBLS {
         Element sk = pairing.getZr().newRandomElement();
         Element pk = g.powZn(sk);
 
+        // When dealing with legitimate tokens...
+        // Element sk = pairing.getZr().newElement(hash(legal_token));
+        // Element pk = g.powZn(sk);
+        // When prove such tokens...
+        // if (ZKPoK(convert_sk_back_to_number, legal_token) == true)
+        //     return true;
+
         return new AsymmetricCipherKeyPair(
                 new BLS01PublicKeyParameters(parameters, pk.getImmutable()),
                 new BLS01PrivateKeyParameters(parameters, sk.getImmutable())
