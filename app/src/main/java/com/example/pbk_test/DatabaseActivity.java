@@ -43,7 +43,7 @@ public class DatabaseActivity extends AppCompatActivity {
     public User user;
     public Doctor doctor;
     public long timeTotal;
-    public BluetoothAdapter bluetoothAdapter;
+    public static BluetoothAdapter bluetoothAdapter;
 
     public double[] lastCoordinate;
     public int nextDistance;
@@ -279,11 +279,8 @@ public class DatabaseActivity extends AppCompatActivity {
         user.keyGen();
         long timeTakenNum = System.currentTimeMillis() - startTime;
         String timeTaken = "Time taken - keyGen: " + timeTakenNum + "ms";
-        // Set PublicKey as Bluetooth name
-        String newName = Base64.getEncoder().encodeToString(MainActivity.getBytesFromCipher(user.nym));
-        bluetoothAdapter.setName(newName);
-        // base64 encoded string to byte[]
-        // byte[] decode = Base64.getDecoder().decode(s);
+
+        String newName = changeSSID(bluetoothAdapter, user);
 
         // timeTotal = 0;
         timeTotal += timeTakenNum;
@@ -749,5 +746,15 @@ public class DatabaseActivity extends AppCompatActivity {
 
         // Don't forget to unregister the ACTION_FOUND receiver.
         unregisterReceiver(receiver);
+    }
+
+    public static String changeSSID(BluetoothAdapter bluetoothAdapter, User user) {
+        // Set PublicKey as Bluetooth name
+        String newName = Base64.getEncoder().encodeToString(MainActivity.getBytesFromCipher(user.nym));
+        bluetoothAdapter.setName(newName);
+        // base64 encoded string to byte[]
+        // byte[] decode = Base64.getDecoder().decode(s);
+
+        return newName;
     }
 }

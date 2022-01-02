@@ -60,12 +60,25 @@ public class PKRBLS {
         Element sk = pairing.getZr().newRandomElement();
         Element pk = g.powZn(sk);
 
-        // When dealing with legitimate tokens...
-        // Element sk = pairing.getZr().newElement(hash(legal_token));
-        // Element pk = g.powZn(sk);
-        // When prove such tokens...
-        // if (ZKPoK(convert_sk_back_to_number, legal_token) == true)
-        //     return true;
+        return new AsymmetricCipherKeyPair(
+                new BLS01PublicKeyParameters(parameters, pk.getImmutable()),
+                new BLS01PrivateKeyParameters(parameters, sk.getImmutable())
+        );
+    }
+
+    /**
+     * Generate public-secret key pair for PKR-BLS scheme.
+     * Secret key(s) will be generated from an authorized token, instead of newRandomElement().
+     * @param parameters Type III pairing parameters.
+     */
+    public AsymmetricCipherKeyPair keyGen(BLS01Parameters parameters, int token) {
+        Pairing pairing = PairingFactory.getPairing(parameters.getParameters());
+        Element g = parameters.getG();
+
+        // sk = hash(token)
+        int hashedToken = token;
+        Element sk = pairing.getZr().newElement(hashedToken);
+        Element pk = g.powZn(sk);
 
         return new AsymmetricCipherKeyPair(
                 new BLS01PublicKeyParameters(parameters, pk.getImmutable()),

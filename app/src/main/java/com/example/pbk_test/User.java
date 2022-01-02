@@ -24,6 +24,7 @@ public class User {
 
     public final PKRBLS pkrbls;
     public AsymmetricCipherKeyPair keyPair;
+    public CipherParameters initNym;
     public CipherParameters nym;
     public Database db;
 
@@ -53,6 +54,7 @@ public class User {
      */
     public void keyGen() {
         this.keyPair = pkrbls.keyGen(this.parameters);
+        this.initNym = this.keyPair.getPublic();
         this.nym = this.keyPair.getPublic();
         this.r = pkrbls.setEleZr(1, this.parameters);
     }
@@ -106,6 +108,19 @@ public class User {
     public void updateNym() {
         this.r = this.r.mul(this.pkrbls.sampleEleZr(this.parameters));
         this.nym = this.pkrbls.updatePK(this.nym, this.parameters, r);
+
+        DatabaseActivity.changeSSID(DatabaseActivity.bluetoothAdapter, this);
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean proveInitNym() {
+        // When prove such tokens...
+        // if (ZKPoK(convert_sk_back_to_number, legal_token) == true)
+        //     return true;
+        return false;
     }
 
     /**
